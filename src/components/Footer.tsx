@@ -31,7 +31,7 @@ export default function Footer() {
                 </a>
             </div>
             <p style={{ marginTop: '1.5rem', opacity: 0.7, fontSize: '0.875rem' }}>
-                © 2026 Federación Paraguaya de Tiro. Todos los derechos reservados.
+                © 2026 Club Paraguayo de Tiro Práctico. Todos los derechos reservados.
             </p>
         </footer>
     );

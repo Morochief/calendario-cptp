@@ -50,7 +50,7 @@ export default function LoginPage() {
                     marginBottom: '2rem',
                     fontSize: '0.875rem'
                 }}>
-                    Federación Paraguaya de Tiro
+                    Club Paraguayo de Tiro Práctico
                 </p>
 
                 {error && (

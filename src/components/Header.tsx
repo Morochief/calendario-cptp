@@ -11,7 +11,7 @@ export default function Header() {
         <header className="header">
             <Link href="/" className="header-logo">
                 <div className="header-title">
-                    <h1>FEDERACIÓN PARAGUAYA DE TIRO</h1>
+                    <h1>CLUB PARAGUAYO DE TIRO PRÁCTICO</h1>
                     <span>CALENDARIO DE COMPETENCIAS 2026</span>
                 </div>
             </Link>

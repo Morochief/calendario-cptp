@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Calendario 2026 | Federación Paraguaya de Tiro",
-  description: "Calendario oficial de competiciones de la Federación Paraguaya de Tiro - Convocatoria 2026",
-  keywords: "tiro deportivo, Paraguay, IPSC, Long Range, competiciones, calendario",
+  title: "Calendario 2026 | Club Paraguayo de Tiro Práctico",
+  description: "Calendario oficial de competiciones del Club Paraguayo de Tiro Práctico - 2026",
+  keywords: "tiro práctico, Paraguay, IPSC, competiciones, calendario, CPTP",
 };
 
 export default function RootLayout({
