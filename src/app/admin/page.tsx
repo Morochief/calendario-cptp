@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { createClient } from '@/lib/supabase';
-import { Evento, Modalidad } from '@/lib/types';
+import { Evento, Modalidad, TipoEvento } from '@/lib/types';
 
 export default function AdminPage() {
-    const [eventos, setEventos] = useState<(Evento & { modalidades: Modalidad })[]>([]);
+    const [eventos, setEventos] = useState<(Evento & { modalidades: Modalidad; tipos_evento?: TipoEvento })[]>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<{ email?: string } | null>(null);
     const router = useRouter();
@@ -36,7 +36,8 @@ export default function AdminPage() {
             .from('eventos')
             .select(`
         *,
-        modalidades (*)
+        modalidades (*),
+        tipos_evento (*)
       `)
             .order('fecha');
 
@@ -170,10 +171,16 @@ export default function AdminPage() {
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`event-badge ${evento.tipo}`}>
-                                                    {evento.tipo === 'puntuable' ? 'Puntuable' :
-                                                        evento.tipo === 'jornada_cero' ? 'Jornada de cero' :
-                                                            evento.tipo}
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    padding: '0.25rem 0.5rem',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 500,
+                                                    background: `${evento.tipos_evento?.color || '#6B7280'}15`,
+                                                    color: evento.tipos_evento?.color || '#6B7280'
+                                                }}>
+                                                    {evento.tipos_evento?.nombre || evento.tipo}
                                                 </span>
                                             </td>
                                             <td>

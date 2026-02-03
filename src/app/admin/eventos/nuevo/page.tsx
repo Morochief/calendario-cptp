@@ -21,7 +21,7 @@ export default function NuevoEventoPage() {
     const [hora, setHora] = useState('08:30');
     const [ubicacion, setUbicacion] = useState('');
     const [descripcion, setDescripcion] = useState('');
-    const [tipo, setTipo] = useState('');
+    const [tipoEventoId, setTipoEventoId] = useState('');
 
     useEffect(() => {
         checkAuthAndLoad();
@@ -58,7 +58,7 @@ export default function NuevoEventoPage() {
         if (tiposData) {
             setTiposEvento(tiposData);
             if (tiposData.length > 0) {
-                setTipo(tiposData[0].nombre);
+                setTipoEventoId(tiposData[0].id);
             }
         }
     }
@@ -80,7 +80,7 @@ export default function NuevoEventoPage() {
                     hora,
                     ubicacion: ubicacion || null,
                     descripcion: descripcion || null,
-                    tipo,
+                    tipo_evento_id: tipoEventoId,
                 });
 
             if (insertError) throw insertError;
@@ -144,12 +144,12 @@ export default function NuevoEventoPage() {
                                 <label htmlFor="tipo">Tipo de evento *</label>
                                 <select
                                     id="tipo"
-                                    value={tipo}
-                                    onChange={(e) => setTipo(e.target.value)}
+                                    value={tipoEventoId}
+                                    onChange={(e) => setTipoEventoId(e.target.value)}
                                     required
                                 >
                                     {tiposEvento.map(t => (
-                                        <option key={t.id} value={t.nombre}>
+                                        <option key={t.id} value={t.id}>
                                             {t.nombre}
                                         </option>
                                     ))}
