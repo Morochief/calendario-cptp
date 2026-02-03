@@ -20,7 +20,7 @@ export default function Header() {
                 />
                 <div className="header-title">
                     <h1>CLUB PARAGUAYO DE TIRO PRÁCTICO</h1>
-                    <span>CALENDARIO DE COMPETENCIAS 2026</span>
+                    <span>CALENDARIO DE ACTIVIDADES 2026</span>
                 </div>
             </Link>
             <nav className="header-nav">
