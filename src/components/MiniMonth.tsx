@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { EventoConModalidad } from '@/lib/types';
 
 interface MiniMonthProps {
@@ -10,6 +11,8 @@ interface MiniMonthProps {
 }
 
 export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthProps) {
+    const [expandido, setExpandido] = useState(false);
+
     // Obtener primer día del mes y cantidad de días
     const firstDay = new Date(year, mesIndex, 1);
     const lastDay = new Date(year, mesIndex + 1, 0);
@@ -65,9 +68,22 @@ export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthPro
         );
     }
 
+    // Mostrar solo 3 eventos por defecto, expandir para ver todos
+    const eventosAMostrar = expandido ? eventosDelMes : eventosDelMes.slice(0, 3);
+    const tieneEventosOcultos = eventosDelMes.length > 3 && !expandido;
+
     return (
-        <div className="mini-month">
-            <div className="mini-month-header">{mes}</div>
+        <div className={`mini-month ${expandido ? 'expanded' : ''}`}>
+            <div
+                className="mini-month-header"
+                onClick={() => eventosDelMes.length > 0 && setExpandido(!expandido)}
+                style={{ cursor: eventosDelMes.length > 0 ? 'pointer' : 'default' }}
+            >
+                {mes}
+                {eventosDelMes.length > 0 && (
+                    <span className="event-count">{eventosDelMes.length}</span>
+                )}
+            </div>
             <div className="mini-month-weekdays">
                 <span>D</span><span>L</span><span>M</span><span>M</span>
                 <span>J</span><span>V</span><span>S</span>
@@ -77,7 +93,7 @@ export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthPro
             </div>
             {eventosDelMes.length > 0 && (
                 <div className="mini-month-events">
-                    {eventosDelMes.slice(0, 4).map((e, i) => (
+                    {eventosAMostrar.map((e, i) => (
                         <div key={i} className="mini-event" title={e.titulo}>
                             <span
                                 className="mini-event-dot"
@@ -89,10 +105,21 @@ export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthPro
                             <span className="mini-event-title">{e.titulo}</span>
                         </div>
                     ))}
-                    {eventosDelMes.length > 4 && (
-                        <div className="mini-event-more">
-                            +{eventosDelMes.length - 4} más
-                        </div>
+                    {tieneEventosOcultos && (
+                        <button
+                            className="mini-event-toggle"
+                            onClick={() => setExpandido(true)}
+                        >
+                            Ver {eventosDelMes.length - 3} más ▼
+                        </button>
+                    )}
+                    {expandido && eventosDelMes.length > 3 && (
+                        <button
+                            className="mini-event-toggle"
+                            onClick={() => setExpandido(false)}
+                        >
+                            Mostrar menos ▲
+                        </button>
                     )}
                 </div>
             )}
