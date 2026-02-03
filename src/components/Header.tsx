@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function Header() {
@@ -10,6 +11,13 @@ export default function Header() {
     return (
         <header className="header">
             <Link href="/" className="header-logo">
+                <Image
+                    src="/logo.png"
+                    alt="Club Paraguayo de Tiro Práctico"
+                    width={60}
+                    height={60}
+                    style={{ objectFit: 'contain' }}
+                />
                 <div className="header-title">
                     <h1>CLUB PARAGUAYO DE TIRO PRÁCTICO</h1>
                     <span>CALENDARIO DE COMPETENCIAS 2026</span>

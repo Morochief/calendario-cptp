@@ -39,3 +39,16 @@ export const MODALIDADES_INICIALES = [
     { nombre: 'Fosa Olímpica', color: '#CA8A04' },
     { nombre: 'Hélice', color: '#6B7280' },
 ];
+
+export type Inscripcion = {
+    id: string;
+    evento_id: string | null;
+    modalidad_id: string;
+    nombre: string;
+    telefono: string;
+    email: string | null;
+    notas: string | null;
+    created_at: string;
+    eventos?: Evento;
+    modalidades?: Modalidad;
+};

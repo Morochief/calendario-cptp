@@ -94,6 +94,9 @@ export default function AdminPage() {
                         <Link href="/admin/eventos/nuevo" className="btn btn-primary">
                             ➕ Nuevo Evento
                         </Link>
+                        <Link href="/admin/inscripciones" className="btn btn-primary" style={{ background: '#059669' }}>
+                            👥 Inscripciones
+                        </Link>
                         <Link href="/admin/modalidades" className="btn btn-secondary">
                             🏷️ Modalidades
                         </Link>

@@ -41,7 +41,7 @@ export default function LoginPage() {
         <div className="login-container">
             <div className="login-card">
                 <div className="login-logo">
-                    <h2 style={{ color: '#DC2626' }}>🎯</h2>
+                    <img src="/logo.png" alt="CPTP" style={{ height: '80px' }} />
                 </div>
                 <h1>Panel de Administración</h1>
                 <p style={{
