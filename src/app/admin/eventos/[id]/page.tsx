@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { createClient } from '@/lib/supabase';
-import { Modalidad, Evento } from '@/lib/types';
+import { Modalidad, TipoEvento } from '@/lib/types';
 
 export default function EditarEventoPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const [modalidades, setModalidades] = useState<Modalidad[]>([]);
+    const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -22,7 +23,7 @@ export default function EditarEventoPage({ params }: { params: Promise<{ id: str
     const [hora, setHora] = useState('08:30');
     const [ubicacion, setUbicacion] = useState('');
     const [descripcion, setDescripcion] = useState('');
-    const [tipo, setTipo] = useState<'puntuable' | 'jornada_cero' | 'otro'>('puntuable');
+    const [tipoEventoId, setTipoEventoId] = useState('');
 
     useEffect(() => {
         checkAuthAndLoad();
@@ -47,6 +48,16 @@ export default function EditarEventoPage({ params }: { params: Promise<{ id: str
             setModalidades(mods);
         }
 
+        // Load tipos de evento
+        const { data: tipos } = await supabase
+            .from('tipos_evento')
+            .select('*')
+            .order('nombre');
+
+        if (tipos) {
+            setTiposEvento(tipos);
+        }
+
         // Load evento
         const { data: evento } = await supabase
             .from('eventos')
@@ -61,7 +72,7 @@ export default function EditarEventoPage({ params }: { params: Promise<{ id: str
             setHora(evento.hora || '08:30');
             setUbicacion(evento.ubicacion || '');
             setDescripcion(evento.descripcion || '');
-            setTipo(evento.tipo || 'puntuable');
+            setTipoEventoId(evento.tipo_evento_id || (tipos && tipos.length > 0 ? tipos[0].id : ''));
         }
 
         setLoading(false);
@@ -84,7 +95,7 @@ export default function EditarEventoPage({ params }: { params: Promise<{ id: str
                     hora,
                     ubicacion: ubicacion || null,
                     descripcion: descripcion || null,
-                    tipo,
+                    tipo_evento_id: tipoEventoId,
                 })
                 .eq('id', id);
 
@@ -162,13 +173,15 @@ export default function EditarEventoPage({ params }: { params: Promise<{ id: str
                                 <label htmlFor="tipo">Tipo de evento *</label>
                                 <select
                                     id="tipo"
-                                    value={tipo}
-                                    onChange={(e) => setTipo(e.target.value as typeof tipo)}
+                                    value={tipoEventoId}
+                                    onChange={(e) => setTipoEventoId(e.target.value)}
                                     required
                                 >
-                                    <option value="puntuable">Fecha Puntuable</option>
-                                    <option value="jornada_cero">Jornada de Cero</option>
-                                    <option value="otro">Otro</option>
+                                    {tiposEvento.map(t => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.nombre}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
