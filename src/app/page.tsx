@@ -92,7 +92,7 @@ export default function CalendarPage() {
     <>
       <Header />
       <main className="main">
-        <h2 className="section-title">Calendario de Actividades 2026</h2>
+        <h2 className="section-title">Competencias 2026</h2>
 
         {modalidades.length > 0 && (
           <ModalityFilter
