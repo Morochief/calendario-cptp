@@ -5,15 +5,24 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { createClient } from '@/lib/supabase';
-import { Modalidad } from '@/lib/types';
+
+interface ModalidadConContacto {
+    id: string;
+    nombre: string;
+    color: string;
+    contacto_nombre: string | null;
+    contacto_telefono: string | null;
+}
 
 export default function ModalidadesPage() {
-    const [modalidades, setModalidades] = useState<Modalidad[]>([]);
+    const [modalidades, setModalidades] = useState<ModalidadConContacto[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [nombre, setNombre] = useState('');
     const [color, setColor] = useState('#DC2626');
+    const [contactoNombre, setContactoNombre] = useState('');
+    const [contactoTelefono, setContactoTelefono] = useState('');
     const [saving, setSaving] = useState(false);
     const router = useRouter();
 
@@ -52,23 +61,36 @@ export default function ModalidadesPage() {
 
         const supabase = createClient();
 
+        const modalidadData = {
+            nombre,
+            color,
+            contacto_nombre: contactoNombre || null,
+            contacto_telefono: contactoTelefono || null,
+        };
+
         if (editingId) {
             await supabase
                 .from('modalidades')
-                .update({ nombre, color })
+                .update(modalidadData)
                 .eq('id', editingId);
         } else {
             await supabase
                 .from('modalidades')
-                .insert({ nombre, color });
+                .insert(modalidadData);
         }
 
+        resetForm();
+        loadModalidades();
+    }
+
+    function resetForm() {
         setNombre('');
         setColor('#DC2626');
+        setContactoNombre('');
+        setContactoTelefono('');
         setEditingId(null);
         setShowForm(false);
         setSaving(false);
-        loadModalidades();
     }
 
     async function handleDelete(id: string) {
@@ -79,18 +101,13 @@ export default function ModalidadesPage() {
         loadModalidades();
     }
 
-    function handleEdit(mod: Modalidad) {
+    function handleEdit(mod: ModalidadConContacto) {
         setEditingId(mod.id);
         setNombre(mod.nombre);
         setColor(mod.color);
+        setContactoNombre(mod.contacto_nombre || '');
+        setContactoTelefono(mod.contacto_telefono || '');
         setShowForm(true);
-    }
-
-    function handleCancel() {
-        setEditingId(null);
-        setNombre('');
-        setColor('#DC2626');
-        setShowForm(false);
     }
 
     if (loading) {
@@ -135,7 +152,7 @@ export default function ModalidadesPage() {
                         <form onSubmit={handleSubmit}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'end' }}>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label htmlFor="nombre">Nombre</label>
+                                    <label htmlFor="nombre">Nombre de la modalidad *</label>
                                     <input
                                         id="nombre"
                                         type="text"
@@ -156,8 +173,32 @@ export default function ModalidadesPage() {
                                     />
                                 </div>
                             </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label htmlFor="contactoNombre">👤 Contacto / Responsable</label>
+                                    <input
+                                        id="contactoNombre"
+                                        type="text"
+                                        value={contactoNombre}
+                                        onChange={(e) => setContactoNombre(e.target.value)}
+                                        placeholder="Ej: Alberto Ruiz"
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label htmlFor="contactoTelefono">📱 Teléfono de contacto</label>
+                                    <input
+                                        id="contactoTelefono"
+                                        type="tel"
+                                        value={contactoTelefono}
+                                        onChange={(e) => setContactoTelefono(e.target.value)}
+                                        placeholder="Ej: 0971 151 500"
+                                    />
+                                </div>
+                            </div>
+
                             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
-                                <button type="button" onClick={handleCancel} className="btn btn-secondary">
+                                <button type="button" onClick={resetForm} className="btn btn-secondary">
                                     Cancelar
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
@@ -183,6 +224,7 @@ export default function ModalidadesPage() {
                                 <tr>
                                     <th>Color</th>
                                     <th>Nombre</th>
+                                    <th>Contacto</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -199,6 +241,25 @@ export default function ModalidadesPage() {
                                             }} />
                                         </td>
                                         <td style={{ fontWeight: 500 }}>{mod.nombre}</td>
+                                        <td>
+                                            {mod.contacto_nombre ? (
+                                                <div>
+                                                    <div style={{ fontWeight: 500 }}>{mod.contacto_nombre}</div>
+                                                    {mod.contacto_telefono && (
+                                                        <a
+                                                            href={`https://wa.me/595${mod.contacto_telefono.replace(/\D/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            style={{ color: '#25D366', fontSize: '0.85rem' }}
+                                                        >
+                                                            📱 {mod.contacto_telefono}
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: '#9CA3AF' }}>Sin contacto</span>
+                                            )}
+                                        </td>
                                         <td>
                                             <div className="admin-actions">
                                                 <button
