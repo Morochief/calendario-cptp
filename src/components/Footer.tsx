@@ -15,6 +15,7 @@ export default function Footer() {
                         </svg>
                     </span>
                     0981 605 605
+                </a>
             </div>
             <p style={{ marginTop: '1.5rem', opacity: 0.7, fontSize: '0.875rem' }}>
                 © 2026 Club Paraguayo de Tiro Práctico. Todos los derechos reservados.
