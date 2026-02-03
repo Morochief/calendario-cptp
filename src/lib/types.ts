@@ -7,18 +7,21 @@ export type Modalidad = {
 export type Evento = {
     id: string;
     modalidad_id: string;
+    tipo_evento_id?: string;
     titulo: string;
     fecha: string;
     hora: string;
     ubicacion: string | null;
     descripcion: string | null;
-    tipo: 'puntuable' | 'jornada_cero' | 'otro';
+    tipo?: string;
     created_at: string;
     modalidades?: Modalidad;
+    tipos_evento?: TipoEvento;
 };
 
 export type EventoConModalidad = Evento & {
     modalidades: Modalidad;
+    tipos_evento?: TipoEvento;
 };
 
 export const MESES = [

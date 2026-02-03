@@ -12,6 +12,10 @@ export default function EventCard({ evento }: EventCardProps) {
     const mes = fecha.toLocaleDateString('es-ES', { month: 'short' });
     const diaSemana = fecha.toLocaleDateString('es-ES', { weekday: 'long' });
 
+    // Usar tipos_evento si existe, sino fallback al campo tipo
+    const tipoNombre = evento.tipos_evento?.nombre || evento.tipo || '';
+    const tipoColor = evento.tipos_evento?.color || '#6B7280';
+
     return (
         <div
             className="event-card"
@@ -28,11 +32,19 @@ export default function EventCard({ evento }: EventCardProps) {
                 {evento.ubicacion && (
                     <span>📍 {evento.ubicacion}</span>
                 )}
-                {evento.tipo && (
-                    <span className={`event-badge ${evento.tipo}`}>
-                        {evento.tipo === 'puntuable' ? 'Puntuable' :
-                            evento.tipo === 'jornada_cero' ? 'Jornada de cero' :
-                                evento.tipo}
+                {tipoNombre && (
+                    <span
+                        style={{
+                            display: 'inline-block',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            background: `${tipoColor}20`,
+                            color: tipoColor
+                        }}
+                    >
+                        {tipoNombre}
                     </span>
                 )}
             </div>

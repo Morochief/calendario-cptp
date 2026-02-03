@@ -32,12 +32,13 @@ export default function CalendarPage() {
       if (modError) throw modError;
       setModalidades(modalidadesData || []);
 
-      // Cargar eventos con su modalidad
+      // Cargar eventos con su modalidad y tipo de evento
       const { data: eventosData, error: evError } = await supabase
         .from('eventos')
         .select(`
           *,
-          modalidades (*)
+          modalidades (*),
+          tipos_evento (*)
         `)
         .order('fecha');
 
