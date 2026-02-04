@@ -51,6 +51,14 @@ export async function middleware(request: NextRequest) {
         }
     }
 
+    // Security: Prevent caching of protected routes (Fixes "Back button" after logout issue)
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        response.headers.set('Surrogate-Control', 'no-store');
+    }
+
     return response;
 }
 
