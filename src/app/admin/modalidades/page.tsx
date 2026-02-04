@@ -219,69 +219,71 @@ export default function ModalidadesPage() {
                             No hay modalidades. ¡Crea la primera!
                         </p>
                     ) : (
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Color</th>
-                                    <th>Nombre</th>
-                                    <th>Contacto</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {modalidades.map(mod => (
-                                    <tr key={mod.id}>
-                                        <td>
-                                            <span style={{
-                                                display: 'inline-block',
-                                                width: '24px',
-                                                height: '24px',
-                                                borderRadius: '4px',
-                                                background: mod.color
-                                            }} />
-                                        </td>
-                                        <td style={{ fontWeight: 500 }}>{mod.nombre}</td>
-                                        <td>
-                                            {mod.contacto_nombre ? (
-                                                <div>
-                                                    <div style={{ fontWeight: 500 }}>{mod.contacto_nombre}</div>
-                                                    {mod.contacto_telefono && (
-                                                        <a
-                                                            href={`https://wa.me/595${mod.contacto_telefono.replace(/\D/g, '')}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            style={{ color: '#25D366', fontSize: '0.85rem' }}
-                                                        >
-                                                            📱 {mod.contacto_telefono}
-                                                        </a>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span style={{ color: '#9CA3AF' }}>Sin contacto</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <div className="admin-actions">
-                                                <button
-                                                    onClick={() => handleEdit(mod)}
-                                                    className="btn btn-secondary"
-                                                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
-                                                >
-                                                    ✏️ Editar
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(mod.id)}
-                                                    className="btn btn-danger"
-                                                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
-                                        </td>
+                        <div className="admin-table-wrapper">
+                            <table className="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Color</th>
+                                        <th>Nombre</th>
+                                        <th>Contacto</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {modalidades.map(mod => (
+                                        <tr key={mod.id}>
+                                            <td>
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    borderRadius: '4px',
+                                                    background: mod.color
+                                                }} />
+                                            </td>
+                                            <td style={{ fontWeight: 500 }}>{mod.nombre}</td>
+                                            <td>
+                                                {mod.contacto_nombre ? (
+                                                    <div>
+                                                        <div style={{ fontWeight: 500 }}>{mod.contacto_nombre}</div>
+                                                        {mod.contacto_telefono && (
+                                                            <a
+                                                                href={`https://wa.me/595${mod.contacto_telefono.replace(/\D/g, '')}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style={{ color: '#25D366', fontSize: '0.85rem' }}
+                                                            >
+                                                                📱 {mod.contacto_telefono}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ color: '#9CA3AF' }}>Sin contacto</span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <div className="admin-actions">
+                                                    <button
+                                                        onClick={() => handleEdit(mod)}
+                                                        className="btn btn-secondary"
+                                                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                    >
+                                                        ✏️ Editar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(mod.id)}
+                                                        className="btn btn-danger"
+                                                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </div>

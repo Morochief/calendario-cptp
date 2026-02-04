@@ -320,83 +320,85 @@ export default function InscripcionesPage() {
                             No hay inscripciones registradas.
                         </p>
                     ) : (
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Teléfono</th>
-                                    <th>Modalidad</th>
-                                    <th>Tipo</th>
-                                    <th>Evento</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredInscripciones.map((insc: Inscripcion & { tipos_evento?: TipoEvento }) => (
-                                    <tr key={insc.id}>
-                                        <td style={{ fontWeight: 500 }}>{insc.nombre}</td>
-                                        <td>
-                                            <a
-                                                href={`https://wa.me/595${insc.telefono.replace(/\D/g, '')}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{ color: '#25D366' }}
-                                            >
-                                                📱 {insc.telefono}
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <span style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.35rem',
-                                                padding: '0.25rem 0.5rem',
-                                                background: `${insc.modalidades?.color}15`,
-                                                color: insc.modalidades?.color,
-                                                borderRadius: '4px',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 500
-                                            }}>
-                                                {insc.modalidades?.nombre}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span style={{
-                                                padding: '0.25rem 0.5rem',
-                                                background: `${insc.tipos_evento?.color || '#6B7280'}15`,
-                                                color: insc.tipos_evento?.color || '#6B7280',
-                                                borderRadius: '4px',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 500
-                                            }}>
-                                                {insc.tipos_evento?.nombre || '-'}
-                                            </span>
-                                        </td>
-                                        <td style={{ fontSize: '0.85rem', color: '#6B7280' }}>
-                                            {insc.eventos?.titulo || 'General'}
-                                        </td>
-                                        <td>
-                                            <div className="admin-actions">
-                                                <button
-                                                    onClick={() => handleEdit(insc)}
-                                                    className="btn btn-secondary"
-                                                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
-                                                >
-                                                    ✏️
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(insc.id)}
-                                                    className="btn btn-danger"
-                                                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
-                                        </td>
+                        <div className="admin-table-wrapper">
+                            <table className="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Teléfono</th>
+                                        <th>Modalidad</th>
+                                        <th>Tipo</th>
+                                        <th>Evento</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filteredInscripciones.map((insc: Inscripcion & { tipos_evento?: TipoEvento }) => (
+                                        <tr key={insc.id}>
+                                            <td style={{ fontWeight: 500 }}>{insc.nombre}</td>
+                                            <td>
+                                                <a
+                                                    href={`https://wa.me/595${insc.telefono.replace(/\D/g, '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{ color: '#25D366' }}
+                                                >
+                                                    📱 {insc.telefono}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.35rem',
+                                                    padding: '0.25rem 0.5rem',
+                                                    background: `${insc.modalidades?.color}15`,
+                                                    color: insc.modalidades?.color,
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 500
+                                                }}>
+                                                    {insc.modalidades?.nombre}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span style={{
+                                                    padding: '0.25rem 0.5rem',
+                                                    background: `${insc.tipos_evento?.color || '#6B7280'}15`,
+                                                    color: insc.tipos_evento?.color || '#6B7280',
+                                                    borderRadius: '4px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 500
+                                                }}>
+                                                    {insc.tipos_evento?.nombre || '-'}
+                                                </span>
+                                            </td>
+                                            <td style={{ fontSize: '0.85rem', color: '#6B7280' }}>
+                                                {insc.eventos?.titulo || 'General'}
+                                            </td>
+                                            <td>
+                                                <div className="admin-actions">
+                                                    <button
+                                                        onClick={() => handleEdit(insc)}
+                                                        className="btn btn-secondary"
+                                                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(insc.id)}
+                                                        className="btn btn-danger"
+                                                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </div>
