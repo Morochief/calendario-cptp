@@ -98,7 +98,8 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
             titulo,
             modalidad_id: modalidadId,
             fecha,
-            hora,
+            // Ensure time is HH:MM (strip seconds if present)
+            hora: hora.slice(0, 5),
             ubicacion: ubicacion || null,
             ubicacion_url: ubicacionUrl || null,
             imagen_url: imagenUrl || null,
