@@ -9,6 +9,7 @@ import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
 import { TableSkeleton } from '@/components/Skeleton';
 import { useToast } from '@/components/Toast';
+import UserDropdown from '@/components/UserDropdown';
 import { createClient } from '@/lib/supabase';
 import { Evento, Modalidad, TipoEvento } from '@/lib/types';
 
@@ -123,11 +124,8 @@ export default function AdminPage() {
                 <div className="admin-header">
                     <div>
                         <h2 className="section-title">Panel de Administración</h2>
-                        <p style={{ color: '#6B7280', fontSize: '0.875rem' }}>
-                            Bienvenido, {user?.email}
-                        </p>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <Link href="/admin/eventos/nuevo" className="btn btn-primary" aria-label="Crear nuevo evento">
                             ➕ Nuevo Evento
                         </Link>
@@ -140,9 +138,8 @@ export default function AdminPage() {
                         <Link href="/admin/tipos-evento" className="btn btn-secondary" aria-label="Gestionar tipos de evento">
                             📋 Tipos
                         </Link>
-                        <button onClick={handleLogout} className="btn btn-secondary" aria-label="Cerrar sesión">
-                            Cerrar sesión
-                        </button>
+                        <div style={{ width: '1px', height: '24px', background: '#E5E7EB', margin: '0 0.5rem' }}></div>
+                        <UserDropdown email={user?.email} onLogout={handleLogout} />
                     </div>
                 </div>
 
