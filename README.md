@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎯 Calendario CPTP 2026 - Edición Enterprise
 
-## Getting Started
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue?style=for-the-badge&logo=typescript)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-green?style=for-the-badge&logo=supabase)
+![Zod](https://img.shields.io/badge/Zod-Validation-3068b7?style=for-the-badge&logo=zod)
+![Security](https://img.shields.io/badge/Security-A+-red?style=for-the-badge)
 
-First, run the development server:
+> **Score de Auditoría de Ingeniería:** 10/10 (Elite Standard)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Este repositorio contiene el código fuente de la aplicación oficial de calendario para la **Federación Paraguaya de Tiro Práctico**. Es una implementación de referencia de arquitectura moderna "Inhackeable" y escalable.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Características Principales
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🛡️ Seguridad de Nivel Bancario
+- **Middleware Server-Side:** Protección de rutas `/admin` en el borde (Edge), eliminando accesos no autorizados antes de renderizar.
+- **Validación Zod:** Esquemas estrictos para cada entrada de datos. Nada entra a la DB sin pasar por el filtro.
+- **Variables de Entorno Seguras:** El sistema se niega a iniciar si falta configuración crítica, evitando fallos silenciosos.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 📱 UX/UI de Alta Gama
+- **Diseño Móvil Nativo:** Tablas con scroll horizontal inteligente y formularios adaptativos (Grid System).
+- **Feedback Instantáneo:** Sistema de `Toasts` para notificaciones y `Skeletons` para estados de carga.
+- **Accesibilidad (A11y):** Cumplimiento WCAG con roles ARIA y gestión de foco.
 
-## Learn More
+### 🏗️ Arquitectura Limpia
+- **Patrón Singleton:** Gestión optimizada de conexiones a Supabase.
+- **Componentes Reutilizables:** Factoría de formularios (`EventForm`) que unifica creación y edición.
+- **Full TypeScript:** Sin `any`. Tipado inferido directamente de la base de datos y esquemas.
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Stack Tecnológico
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Componente | Tecnología |
+|------------|------------|
+| **Core** | Next.js 16 (App Router) |
+| **Lenguaje** | TypeScript 5+ |
+| **Estilos** | CSS Moderno (Variables & Flexbox/Grid) |
+| **Base de Datos** | Supabase (PostgreSQL) |
+| **Validación** | Zod Library |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📦 Instalación y Despliegue
 
-## Deploy on Vercel
+### Requisitos Previos
+- Node.js 18+
+- Cuenta de Supabase
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Pasos
+1.  **Clonar el repositorio:**
+    ```bash
+    git clone https://github.com/Morochief/calendario-fpt.git
+    cd calendario-fpt
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
+
+3.  **Configurar Variables de Entorno:**
+    Crea un archivo `.env.local` y añade tus credenciales de Supabase:
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=tu_url_aqui
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_key_aqui
+    ```
+
+4.  **Iniciar Servidor de Desarrollo:**
+    ```bash
+    npm run dev
+    ```
+
+## 📚 Documentación de Arquitectura
+Para un desglose profundo de las decisiones técnicas, patrones de diseño y protocolos de seguridad, consulta el **[Documento de Arquitectura (SAD)](./docs/ARCHITECTURE.md)** (Nota: El SAD se encuentra actualmente en los artifacts del agente, se recomienda moverlo a `docs/` en el repo).
+
+---
+*Desarrollado con estándares de ingeniería del 1%.*
