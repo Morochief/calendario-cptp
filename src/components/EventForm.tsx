@@ -115,6 +115,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                 const field = issue.path[0]?.toString() || 'general';
                 fieldErrors[field] = issue.message;
             });
+            console.error('❌ Errores de validación Zod:', fieldErrors); // Log para debug
             setErrors(fieldErrors);
             showToast('Por favor corrige los errores del formulario', 'error');
             setLoading(false);
