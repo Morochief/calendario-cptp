@@ -12,6 +12,8 @@ export type Evento = {
     fecha: string;
     hora: string;
     ubicacion: string | null;
+    ubicacion_url: string | null;
+    imagen_url: string | null;
     descripcion: string | null;
     tipo?: string;
     created_at: string;

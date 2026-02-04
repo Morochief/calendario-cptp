@@ -101,6 +101,30 @@ export default function Footer() {
                 ))}
             </div>
 
+            {/* Location Link */}
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                <a
+                    href="https://maps.app.goo.gl/weBjZMXHERaafE858?g_st=aw"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.75rem 1.5rem',
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        color: 'white',
+                        textDecoration: 'none',
+                        fontWeight: 500,
+                        transition: 'background 0.2s'
+                    }}
+                >
+                    <span style={{ fontSize: '1.25rem' }}>📍</span>
+                    Ver ubicación del Club en Google Maps
+                </a>
+            </div>
+
             <p style={{ marginTop: '1.5rem', opacity: 0.7, fontSize: '0.875rem', textAlign: 'center' }}>
                 © {new Date().getFullYear()} Club Paraguayo de Tiro Práctico. Todos los derechos reservados.
             </p>

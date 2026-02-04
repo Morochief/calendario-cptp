@@ -32,6 +32,10 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
     const [fecha, setFecha] = useState(initialData?.fecha || '');
     const [hora, setHora] = useState(initialData?.hora || '08:30');
     const [ubicacion, setUbicacion] = useState(initialData?.ubicacion || '');
+    const [ubicacionUrl, setUbicacionUrl] = useState(
+        initialData?.ubicacion_url || 'https://maps.app.goo.gl/weBjZMXHERaafE858?g_st=aw'
+    );
+    const [imagenUrl, setImagenUrl] = useState(initialData?.imagen_url || '');
     const [descripcion, setDescripcion] = useState(initialData?.descripcion || '');
     const [tipoEventoId, setTipoEventoId] = useState(initialData?.tipo_evento_id || '');
 
@@ -47,6 +51,8 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
             setFecha(initialData.fecha || '');
             setHora(initialData.hora || '08:30');
             setUbicacion(initialData.ubicacion || '');
+            setUbicacionUrl(initialData.ubicacion_url || 'https://maps.app.goo.gl/weBjZMXHERaafE858?g_st=aw');
+            setImagenUrl(initialData.imagen_url || '');
             setDescripcion(initialData.descripcion || '');
             setTipoEventoId(initialData.tipo_evento_id || '');
         }
@@ -94,6 +100,8 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
             fecha,
             hora,
             ubicacion: ubicacion || null,
+            ubicacion_url: ubicacionUrl || null,
+            imagen_url: imagenUrl || null,
             descripcion: descripcion || null,
             tipo_evento_id: tipoEventoId || null,
         };
@@ -249,6 +257,42 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                     placeholder="Ej: Polígono de Tiro 10M - Comité Olímpico Paraguayo"
                     aria-invalid={!!errors.ubicacion}
                 />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                    <label htmlFor="ubicacion_url">
+                        📍 Link de Ubicación (Google Maps)
+                    </label>
+                    <input
+                        id="ubicacion_url"
+                        type="url"
+                        value={ubicacionUrl}
+                        onChange={(e) => setUbicacionUrl(e.target.value)}
+                        placeholder="https://maps.app.goo.gl/..."
+                        aria-invalid={!!errors.ubicacion_url}
+                    />
+                    {errors.ubicacion_url && (
+                        <span className="field-error">{errors.ubicacion_url}</span>
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="imagen_url">
+                        🖼️ URL de Imagen (opcional)
+                    </label>
+                    <input
+                        id="imagen_url"
+                        type="url"
+                        value={imagenUrl}
+                        onChange={(e) => setImagenUrl(e.target.value)}
+                        placeholder="https://example.com/image.jpg"
+                        aria-invalid={!!errors.imagen_url}
+                    />
+                    {errors.imagen_url && (
+                        <span className="field-error">{errors.imagen_url}</span>
+                    )}
+                </div>
             </div>
 
             <div className="form-group">

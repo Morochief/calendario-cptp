@@ -55,6 +55,8 @@ export const eventoSchema = z.object({
     fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido'),
     hora: z.string().regex(/^\d{2}:\d{2}$/, 'Formato de hora inválido').default('08:30'),
     ubicacion: z.string().max(200).nullable().optional(),
+    ubicacion_url: z.string().url('Debe ser una URL válida').nullable().optional(),
+    imagen_url: z.string().url('Debe ser una URL válida').nullable().optional(),
     descripcion: z.string().max(1000).nullable().optional(),
     tipo: z.string().max(50).nullable().optional(), // Legacy field
     created_at: z.string().optional(),
