@@ -1327,12 +1327,12 @@ textarea:focus-visible {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: var(--transition-fast);
-  color: var(--color-dark);
+  color: white;
 }
 
 .user-dropdown-trigger:hover,
 .user-dropdown-trigger.active {
-  background: var(--color-light-gray);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .user-avatar {
@@ -1352,6 +1352,7 @@ textarea:focus-visible {
   font-size: 0.9rem;
   font-weight: 500;
   display: none;
+  color: white;
   /* Hidden on mobile by default */
 }
 
@@ -1363,7 +1364,7 @@ textarea:focus-visible {
 
 .user-chevron {
   font-size: 0.7rem;
-  color: var(--color-gray);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .user-dropdown-menu {
@@ -1431,7 +1432,8 @@ textarea:focus-visible {
   text-align: left;
   cursor: pointer;
   font-size: 0.9rem;
-  color: var(--color-dark);
+  color: #111827;
+  text-decoration: none;
   transition: background 0.1s;
 }
 
