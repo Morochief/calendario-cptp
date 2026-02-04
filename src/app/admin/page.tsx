@@ -117,22 +117,33 @@ export default function AdminPage() {
             <div className="admin-container" id="main-content">
                 <Breadcrumbs />
                 <div className="admin-header">
-                    <div>
-                        <h2 className="section-title">Panel de Administración</h2>
+                    <h2 className="section-title">Panel de Administración</h2>
+                </div>
+
+                {/* Toolbar de acciones */}
+                <div className="admin-toolbar">
+                    <div className="toolbar-group">
+                        <span className="toolbar-label">Acciones</span>
+                        <div className="toolbar-buttons">
+                            <Link href="/admin/eventos/nuevo" className="btn btn-primary" aria-label="Crear nuevo evento">
+                                ➕ Nuevo Evento
+                            </Link>
+                            <Link href="/admin/inscripciones" className="btn btn-success" aria-label="Ver inscripciones">
+                                👥 Inscripciones
+                            </Link>
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <Link href="/admin/eventos/nuevo" className="btn btn-primary" aria-label="Crear nuevo evento">
-                            ➕ Nuevo Evento
-                        </Link>
-                        <Link href="/admin/inscripciones" className="btn btn-primary" style={{ background: '#059669' }} aria-label="Ver inscripciones">
-                            👥 Inscripciones
-                        </Link>
-                        <Link href="/admin/modalidades" className="btn btn-secondary" aria-label="Gestionar modalidades">
-                            🏷️ Modalidades
-                        </Link>
-                        <Link href="/admin/tipos-evento" className="btn btn-secondary" aria-label="Gestionar tipos de evento">
-                            📋 Tipos
-                        </Link>
+                    <div className="toolbar-divider" />
+                    <div className="toolbar-group">
+                        <span className="toolbar-label">Configuración</span>
+                        <div className="toolbar-buttons">
+                            <Link href="/admin/modalidades" className="btn btn-outline" aria-label="Gestionar modalidades">
+                                🏷️ Modalidades
+                            </Link>
+                            <Link href="/admin/tipos-evento" className="btn btn-outline" aria-label="Gestionar tipos de evento">
+                                📋 Tipos
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
