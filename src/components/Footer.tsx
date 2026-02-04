@@ -102,7 +102,7 @@ export default function Footer() {
             </div>
 
             <p style={{ marginTop: '1.5rem', opacity: 0.7, fontSize: '0.875rem', textAlign: 'center' }}>
-                © 2026 Club Paraguayo de Tiro Práctico. Todos los derechos reservados.
+                © {new Date().getFullYear()} Club Paraguayo de Tiro Práctico. Todos los derechos reservados.
             </p>
         </footer>
     );
