@@ -98,6 +98,8 @@ Los visuales se adaptan fluidamente usando un **Sistema Híbrido Grid/Flex** en 
     *   **Toasts:** Confirmación visual inmediata (Éxito/Error/Advertencia).
     *   **Skeletons:** Optimización de rendimiento percibido usando marcadores de posición durante la carga de datos.
     *   **Estados:** Manejo explícito de estados de Carga, Vacío y Error.
+    *   **Navegación Unificada:** Implementación de `UserDropdown` en cabecera global para acceso persistente y manejo de sesión.
+    *   **Toolbar de Administración:** Organización lógica de herramientas separando "Acciones Operativas" (Crear, Ver) de "Configuración" (Tipos, Modalidades), utilizando variantes de botones semánticos para reducir carga cognitiva.
 
 ### ♿ Accesibilidad (A11y)
 *   **Roles ARIA:** Aplicados a todos los elementos interactivos personalizados (Toasts, Modales).
