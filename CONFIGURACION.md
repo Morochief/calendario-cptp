@@ -82,8 +82,31 @@ insert into modalidades (nombre, color) values
   ('Aire Comprimido (Olímpico)', '#4F46E5'),
   ('Trap Americano', '#65A30D'),
   ('Fosa Olímpica', '#CA8A04'),
+  ('Fosa Olímpica', '#CA8A04'),
   ('Hélice', '#6B7280');
+
+-- Crear tabla de reglamentos
+create table reglamentos (
+  id uuid default gen_random_uuid() primary key,
+  titulo text not null,
+  url text not null,
+  created_at timestamp with time zone default now()
+);
+
+-- RLS para reglamentos
+alter table reglamentos enable row level security;
+create policy "Reglamentos públicos" on reglamentos for select using (true);
+create policy "Admin mod reglamentos" on reglamentos for all using (auth.role() = 'authenticated');
 ```
+
+## 4.1 Configurar Storage (PDFs)
+
+1. Ve a **Storage** en Supabase.
+2. Crea un nuevo bucket llamado `reglamentos`.
+3. Activa "Public Bucket".
+4. Añade políticas:
+    - SELECT: `(bucket_id = 'reglamentos')` (para Public/Anon)
+    - INSERT/DELETE: `(bucket_id = 'reglamentos')` (para Authenticated)
 
 ## 5. Crear usuario administrador
 

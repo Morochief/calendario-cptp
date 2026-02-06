@@ -21,6 +21,7 @@ Este repositorio contiene el código fuente de la aplicación oficial de calenda
 - **Diseño Móvil Nativo:** Tablas con scroll horizontal inteligente y formularios adaptativos (Grid System).
 - **Feedback Instantáneo:** Sistema de `Toasts` para notificaciones y `Skeletons` para estados de carga.
 - **Accesibilidad (A11y):** Cumplimiento WCAG con roles ARIA y gestión de foco.
+- **Reglamentos (Digitalizados):** Módulo CMS para gestión y distribución de documentos oficiales en PDF.
 
 ### 🏗️ Arquitectura Limpia
 - **Patrón Singleton:** Gestión optimizada de conexiones a Supabase.

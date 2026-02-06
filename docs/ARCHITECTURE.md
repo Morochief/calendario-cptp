@@ -62,9 +62,10 @@ export const eventoSchema = z.object({
 
 | Tabla | Primary Key | Constraints Críticos | Descripción |
 |-------|-------------|----------------------|-------------|
-| `eventos` | `id` (uuid) | `modalidad_id` (FK) | Entidad central para las competiciones. |
 | `modalidades`| `id` (uuid) | `color` (HEX Regex) | Categorías con contactos y colores asociados. |
+| `eventos` | `id` (uuid) | `modalidad_id` (FK) | Entidad central para las competiciones. |
 | `inscripciones`| `id` (uuid) | `evento_id` (FK/Null) | Inscripciones de usuarios vinculadas a eventos. |
+| `reglamentos` | `id` (uuid) | `url` (Storage Link) | Archivos PDF alojados en Supabase Storage. |
 
 ---
 
