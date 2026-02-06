@@ -11,27 +11,30 @@ interface ModalityFilterProps {
 export default function ModalityFilter({ modalidades, selected, onSelect }: ModalityFilterProps) {
     return (
         <div className="filter-bar">
-            <label>Filtrar por modalidad:</label>
-            <button
-                className={`filter-chip ${selected === null ? 'active' : ''}`}
-                onClick={() => onSelect(null)}
-            >
-                Todas
-            </button>
-            {modalidades.map((mod) => (
+            {/* Scroll Container for horizontal swiping */}
+            <div className="filter-scroll-container">
                 <button
-                    key={mod.id}
-                    className={`filter-chip ${selected === mod.id ? 'active' : ''}`}
-                    onClick={() => onSelect(mod.id)}
-                    style={{
-                        borderColor: selected === mod.id ? mod.color : undefined,
-                        background: selected === mod.id ? mod.color : undefined,
-                    }}
+                    className={`filter-chip ${selected === null ? 'active' : ''}`}
+                    onClick={() => onSelect(null)}
                 >
-                    <span className="dot" style={{ background: mod.color }} />
-                    {mod.nombre}
+                    Todas
                 </button>
-            ))}
+                {modalidades.map((mod) => (
+                    <button
+                        key={mod.id}
+                        className={`filter-chip ${selected === mod.id ? 'active' : ''}`}
+                        onClick={() => onSelect(mod.id)}
+                        style={{
+                            backgroundColor: selected === mod.id ? mod.color : undefined,
+                            borderColor: selected === mod.id ? mod.color : undefined,
+                            color: selected === mod.id ? 'white' : undefined
+                        }}
+                    >
+                        <span className="dot" style={{ background: selected === mod.id ? 'white' : mod.color }} />
+                        {mod.nombre}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 }
