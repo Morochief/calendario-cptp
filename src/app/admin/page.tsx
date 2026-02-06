@@ -143,6 +143,9 @@ export default function AdminPage() {
                             <Link href="/admin/tipos-evento" className="btn btn-outline" aria-label="Gestionar tipos de evento">
                                 📋 Tipos
                             </Link>
+                            <Link href="/admin/reglamentos" className="btn btn-outline" aria-label="Gestionar reglamentos">
+                                📜 Reglamentos
+                            </Link>
                         </div>
                     </div>
                 </div>
