@@ -40,7 +40,7 @@ export default function Header() {
         <header className="header">
             <Link href="/" className="header-logo">
                 <Image
-                    src="/logo.png"
+                    src="/logo.svg"
                     alt="Club Paraguayo de Tiro Práctico"
                     width={60}
                     height={60}
