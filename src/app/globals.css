@@ -128,86 +128,115 @@ a {
   border-radius: 2px;
 }
 
-/* Filter Bar (Elite Redesign) */
-.filter-bar {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 1rem 0;
-  /* Vertical padding only, horizontal handled by container */
+/* Filter Dropdown (Elite Redesign) */
+.filter-container {
   margin-bottom: 2rem;
+  position: relative;
+  z-index: 50;
   display: flex;
-  position: sticky;
-  top: 80px;
-  /* Below header */
-  z-index: 90;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  justify-content: flex-start;
+  /* Left aligned */
 }
 
-.filter-scroll-container {
-  display: flex;
-  overflow-x: auto;
-  gap: 0.75rem;
-  padding: 0 2rem;
-  /* Match main container padding */
-  width: 100%;
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* IE/Edge */
-  scroll-behavior: smooth;
-}
-
-.filter-scroll-container::-webkit-scrollbar {
-  display: none;
-  /* Chrome/Safari */
-}
-
-.filter-bar label {
-  display: none;
-  /* Hide label for cleaner look */
-}
-
-.filter-chip {
-  padding: 0.5rem 1.25rem;
-  border-radius: 100px;
-  border: 1px solid #E5E7EB;
-  background: white;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+.filter-trigger {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  /* Prevent wrapping */
-  color: #374151;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0;
-  /* Prevent shrinking */
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 100px;
+  font-weight: 600;
+  color: var(--color-dark);
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 220px;
 }
 
-.filter-chip:hover {
+.filter-trigger:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   border-color: var(--color-gray);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
-.filter-chip.active {
-  background: var(--color-dark);
-  /* Default active, overridden by inline styles */
-  border-color: transparent;
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: scale(1.05);
+.filter-trigger.active {
+  border-color: var(--color-primary);
+  background: #FEF2F2;
+  /* Light red bg */
+  color: var(--color-primary-dark);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
 }
 
-.filter-chip .dot {
-  width: 8px;
-  height: 8px;
+.filter-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 0.75rem;
+  min-width: 280px;
+  max-height: 400px;
+  overflow-y: auto;
+  animation: dropdownSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transform-origin: top left;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #4B5563;
+  font-weight: 500;
+}
+
+.dropdown-item:hover {
+  background: #F3F4F6;
+  color: var(--color-dark);
+  transform: translateX(4px);
+}
+
+.dropdown-item.selected {
+  background: #FEF2F2;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.dropdown-item .dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
 }
 
 /* Calendar Grid */
