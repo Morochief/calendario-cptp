@@ -57,6 +57,7 @@ export type Inscripcion = {
     eventos?: Evento;
     modalidades?: Modalidad;
     estado_pago?: 'pendiente' | 'pagado' | 'parcial';
+    monto_pagado?: number;
 };
 
 export type TipoEvento = {
