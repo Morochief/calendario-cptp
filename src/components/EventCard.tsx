@@ -2,6 +2,27 @@
 
 import { EventoConModalidad } from '@/lib/types';
 
+// Lucide-style SVG Icons (1.2px stroke)
+const ClockIcon = () => (
+    <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+    </svg>
+);
+
+const MapPinIcon = () => (
+    <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+    </svg>
+);
+
+const NavigationIcon = () => (
+    <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="3 11 22 2 13 21 11 13 3 11" />
+    </svg>
+);
+
 interface EventCardProps {
     evento: EventoConModalidad;
 }
@@ -12,7 +33,6 @@ export default function EventCard({ evento }: EventCardProps) {
     const mes = fecha.toLocaleDateString('es-ES', { month: 'short' });
     const diaSemana = fecha.toLocaleDateString('es-ES', { weekday: 'long' });
 
-    // Usar tipos_evento si existe, sino fallback al campo tipo
     const tipoNombre = evento.tipos_evento?.nombre || evento.tipo || '';
     const tipoColor = evento.tipos_evento?.color || '#6B7280';
     const hasImage = !!evento.imagen_url;
@@ -22,7 +42,7 @@ export default function EventCard({ evento }: EventCardProps) {
             className={`event-card ${hasImage ? 'has-image' : ''}`}
             style={{
                 borderLeftColor: evento.modalidades?.color || '#DC2626',
-                overflow: 'hidden' // Ensure image doesn't overflow rounded corners
+                overflow: 'hidden'
             }}
         >
             {hasImage && (
@@ -46,7 +66,10 @@ export default function EventCard({ evento }: EventCardProps) {
 
                 <div className="event-meta">
                     {evento.hora && (
-                        <span>🕐 {evento.hora.slice(0, 5)} hs</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <ClockIcon />
+                            {evento.hora.slice(0, 5)} hs
+                        </span>
                     )}
 
                     {tipoNombre && (
@@ -67,8 +90,8 @@ export default function EventCard({ evento }: EventCardProps) {
                 </div>
 
                 {evento.ubicacion && (
-                    <div className="event-location-row" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: '#4B5563', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span>📍</span>
+                    <div className="event-location-row" style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <MapPinIcon />
                         <span>{evento.ubicacion}</span>
                     </div>
                 )}
@@ -107,14 +130,13 @@ export default function EventCard({ evento }: EventCardProps) {
                     <p style={{
                         marginTop: '0.75rem',
                         fontSize: '0.875rem',
-                        color: '#6B7280',
+                        color: 'var(--text-secondary)',
                         lineHeight: 1.5
                     }}>
                         {evento.descripcion}
                     </p>
                 )}
 
-                {/* Botón de Cómo Llegar (Solo si hay URL) */}
                 {evento.ubicacion_url && (
                     <a
                         href={evento.ubicacion_url}
@@ -129,16 +151,17 @@ export default function EventCard({ evento }: EventCardProps) {
                             marginTop: '1rem',
                             width: '100%',
                             padding: '0.6rem',
-                            background: '#F3F4F6',
-                            color: '#1F2937',
-                            borderRadius: '8px',
+                            background: 'var(--bg-hover)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-primary)',
+                            borderRadius: 'var(--radius-md)',
                             textDecoration: 'none',
                             fontSize: '0.875rem',
                             fontWeight: 500,
-                            transition: 'all 0.2s'
+                            transition: 'all var(--transition-normal)'
                         }}
                     >
-                        <span>🗺️</span>
+                        <NavigationIcon />
                         Cómo llegar
                     </a>
                 )}
