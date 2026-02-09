@@ -3,6 +3,21 @@
 import { useState, useRef, useEffect } from 'react';
 import { Modalidad } from '@/lib/types';
 
+// Lucide-style SVG Icons (1.2px stroke)
+const FilterIcon = () => (
+    <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+    </svg>
+);
+
+const LayersIcon = () => (
+    <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+        <polyline points="2 17 12 22 22 17" />
+        <polyline points="2 12 12 17 22 12" />
+    </svg>
+);
+
 interface ModalityFilterProps {
     modalidades: Modalidad[];
     selected: string | null;
@@ -13,7 +28,6 @@ export default function ModalityFilter({ modalidades, selected, onSelect }: Moda
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Close on click outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -51,13 +65,12 @@ export default function ModalityFilter({ modalidades, selected, onSelect }: Moda
                         </>
                     ) : (
                         <>
-                            <span>🔍</span>
+                            <FilterIcon />
                             Filtrar por Modalidad
                         </>
                     )}
                 </div>
 
-                {/* Chevron Icon */}
                 <svg
                     width="20"
                     height="20"
@@ -80,11 +93,11 @@ export default function ModalityFilter({ modalidades, selected, onSelect }: Moda
                         className={`dropdown-item ${selected === null ? 'selected' : ''}`}
                         onClick={() => handleSelect(null)}
                     >
-                        <span>👁️</span>
+                        <LayersIcon />
                         Ver Todas
                     </button>
 
-                    <div style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '0.25rem 0' }} />
+                    <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.25rem 0' }} />
 
                     {modalidades.map((mod) => (
                         <button

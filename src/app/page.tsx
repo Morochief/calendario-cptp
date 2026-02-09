@@ -8,7 +8,6 @@ import MonthCard from '@/components/MonthCard';
 import AnnualCalendar from '@/components/AnnualCalendar';
 import MetricsWidget from '@/components/MetricsWidget';
 import UpcomingWidget from '@/components/UpcomingWidget';
-import SystemStatusWidget from '@/components/SystemStatusWidget';
 import { createClient } from '@/lib/supabase';
 import { Modalidad, EventoConModalidad, MESES } from '@/lib/types';
 
@@ -175,7 +174,6 @@ export default function CalendarPage() {
         {/* Side Widgets */}
         <MetricsWidget eventos={eventos} modalidades={modalidades} />
         <UpcomingWidget eventos={eventos} />
-        <SystemStatusWidget />
       </main>
       <Footer />
     </>
