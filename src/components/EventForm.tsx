@@ -22,6 +22,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
     const [modalidades, setModalidades] = useState<Modalidad[]>([]);
     const [tiposEvento, setTiposEvento] = useState<TipoEvento[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const router = useRouter();
     const { showToast } = useToast();
@@ -36,6 +37,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
         initialData?.ubicacion_url || 'https://maps.app.goo.gl/weBjZMXHERaafE858?g_st=aw'
     );
     const [imagenUrl, setImagenUrl] = useState(initialData?.imagen_url || '');
+    const [imagenFile, setImagenFile] = useState<File | null>(null);
     const [descripcion, setDescripcion] = useState(initialData?.descripcion || '');
     const [tipoEventoId, setTipoEventoId] = useState(initialData?.tipo_evento_id || '');
 
@@ -88,10 +90,54 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
         }
     }
 
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setImagenFile(e.target.files[0]);
+            // Clear URL if they select a file
+            setImagenUrl('');
+        }
+    };
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setLoading(true);
         setErrors({});
+
+        let finalImageUrl = imagenUrl;
+        const supabase = createClient();
+
+        // Handle Image Upload if a file was selected
+        if (imagenFile) {
+            setUploadingImage(true);
+            try {
+                const fileExt = imagenFile.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+
+                const { error: uploadError, data } = await supabase.storage
+                    .from('event-images')
+                    .upload(filePath, imagenFile);
+
+                if (uploadError) {
+                    console.error('Error uploading image:', uploadError);
+                    throw new Error('No se pudo subir la imagen. Verifica si el bucket event-images existe.');
+                }
+
+                // Get public URL
+                const { data: { publicUrl } } = supabase.storage
+                    .from('event-images')
+                    .getPublicUrl(filePath);
+
+                finalImageUrl = publicUrl;
+                showToast('Imagen subida correctamente', 'success');
+            } catch (err: any) {
+                setErrors((prev) => ({ ...prev, imagen_url: err.message || 'Error al subir la imagen' }));
+                setUploadingImage(false);
+                setLoading(false);
+                return;
+            }
+            setUploadingImage(false);
+        }
 
         // Build form data
         const formData = {
@@ -102,7 +148,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
             hora: hora.slice(0, 5),
             ubicacion: ubicacion || null,
             ubicacion_url: ubicacionUrl || null,
-            imagen_url: imagenUrl || null,
+            imagen_url: finalImageUrl || null,
             descripcion: descripcion || null,
             tipo_evento_id: tipoEventoId || null,
         };
@@ -124,8 +170,6 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
         }
 
         try {
-            const supabase = createClient();
-
             if (isEditing && initialData?.id) {
                 const { error } = await supabase
                     .from('eventos')
@@ -261,40 +305,64 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                 />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="form-group">
-                    <label htmlFor="ubicacion_url">
-                        📍 Link de Ubicación (Google Maps)
-                    </label>
+            <div className="form-group">
+                <label htmlFor="ubicacion_url">
+                    📍 Link de Ubicación (Google Maps)
+                </label>
+                <input
+                    id="ubicacion_url"
+                    type="url"
+                    value={ubicacionUrl}
+                    onChange={(e) => setUbicacionUrl(e.target.value)}
+                    placeholder="https://maps.app.goo.gl/..."
+                    aria-invalid={!!errors.ubicacion_url}
+                />
+                {errors.ubicacion_url && (
+                    <span className="field-error">{errors.ubicacion_url}</span>
+                )}
+            </div>
+
+            <div className="form-group" style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px', background: '#f9f9f9' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                    🖼️ Imagen del Evento (opcional)
+                </label>
+                
+                <div style={{ marginBottom: '1rem' }}>
+                    <label htmlFor="imagen_file" style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Subir Imagen Local:</label>
                     <input
-                        id="ubicacion_url"
-                        type="url"
-                        value={ubicacionUrl}
-                        onChange={(e) => setUbicacionUrl(e.target.value)}
-                        placeholder="https://maps.app.goo.gl/..."
-                        aria-invalid={!!errors.ubicacion_url}
+                        id="imagen_file"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        disabled={loading || uploadingImage}
                     />
-                    {errors.ubicacion_url && (
-                        <span className="field-error">{errors.ubicacion_url}</span>
-                    )}
+                    {imagenFile && <span style={{ fontSize: '0.8rem', color: 'green', marginLeft: '0.5rem' }}>Archivo seleccionado: {imagenFile.name}</span>}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="imagen_url">
-                        🖼️ URL de Imagen (opcional)
-                    </label>
+                <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#666', fontSize: '0.9rem' }}>
+                    - o -
+                </div>
+
+                <div>
+                    <label htmlFor="imagen_url" style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.25rem' }}>URL de Imagen existente:</label>
                     <input
                         id="imagen_url"
                         type="url"
                         value={imagenUrl}
-                        onChange={(e) => setImagenUrl(e.target.value)}
+                        onChange={(e) => {
+                            setImagenUrl(e.target.value);
+                            setImagenFile(null); // Clear file if they type a URL
+                            const fileInput = document.getElementById('imagen_file') as HTMLInputElement;
+                            if(fileInput) fileInput.value = '';
+                        }}
                         placeholder="https://example.com/image.jpg"
                         aria-invalid={!!errors.imagen_url}
+                        disabled={loading || uploadingImage}
                     />
-                    {errors.imagen_url && (
-                        <span className="field-error">{errors.imagen_url}</span>
-                    )}
                 </div>
+                {errors.imagen_url && (
+                    <span className="field-error" style={{ display: 'block', marginTop: '0.25rem' }}>{errors.imagen_url}</span>
+                )}
             </div>
 
             <div className="form-group">
@@ -321,10 +389,10 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                 <button
                     type="submit"
                     className="btn btn-primary"
-                    disabled={loading}
-                    aria-busy={loading}
+                    disabled={loading || uploadingImage}
+                    aria-busy={loading || uploadingImage}
                 >
-                    {loading ? 'Guardando...' : isEditing ? '💾 Guardar Cambios' : '💾 Guardar Evento'}
+                    {uploadingImage ? 'Subiendo imagen...' : loading ? 'Guardando...' : isEditing ? '💾 Guardar Cambios' : '💾 Guardar Evento'}
                 </button>
             </div>
         </form>
