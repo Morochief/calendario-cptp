@@ -2221,8 +2221,8 @@ textarea:focus-visible {
   top: 100%;
   right: 0;
   margin-top: 0.5rem;
-  background: var(--color-white);
-  border: 1px solid var(--color-light-gray);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   min-width: 200px;
@@ -2250,7 +2250,7 @@ textarea:focus-visible {
 .user-dropdown-label {
   display: block;
   font-size: 0.75rem;
-  color: var(--color-gray);
+  color: var(--text-muted);
   margin-bottom: 0.25rem;
 }
 
@@ -2258,7 +2258,7 @@ textarea:focus-visible {
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-dark);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2266,7 +2266,7 @@ textarea:focus-visible {
 
 .user-dropdown-divider {
   height: 1px;
-  background: var(--color-light-gray);
+  background: var(--border-subtle);
   margin: 0.5rem 0;
 }
 
@@ -2281,28 +2281,28 @@ textarea:focus-visible {
   text-align: left;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #111827;
+  color: var(--text-primary);
   text-decoration: none;
   transition: background 0.1s;
 }
 
 .user-dropdown-item:hover {
-  background: var(--color-light-gray);
+  background: var(--bg-hover);
 }
 
-/* Force dark text for anchor links inside dropdown */
+/* Force correct text for anchor links inside dropdown */
 a.user-dropdown-item,
 .user-dropdown-menu a {
-  color: #111827 !important;
+  color: var(--text-primary) !important;
   text-decoration: none !important;
 }
 
 .user-dropdown-item.danger {
-  color: #DC2626;
+  color: var(--color-primary);
 }
 
 .user-dropdown-item.danger:hover {
-  background: #FEF2F2;
+  background: rgba(220, 38, 38, 0.1);
 }
 
 /* ========================================
