@@ -14,9 +14,9 @@ export default function MonthCard({ mes, mesIndex, eventos }: MonthCardProps) {
     const [selectedEvent, setSelectedEvent] = useState<EventoConModalidad | null>(null);
 
     const eventosDelMes = eventos.filter(e => {
-        const fecha = new Date(e.fecha + 'T12:00:00');
+        const fecha = new Date(e.fecha + 'T00:00:00');
         return fecha.getMonth() === mesIndex;
-    }).sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    }).sort((a, b) => new Date(a.fecha + 'T00:00:00').getTime() - new Date(b.fecha + 'T00:00:00').getTime());
 
     return (
         <>

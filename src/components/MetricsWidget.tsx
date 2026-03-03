@@ -20,7 +20,7 @@ export default function MetricsWidget({ eventos, modalidades }: MetricsWidgetPro
     // Calculate metrics
     const totalEventos = eventos.length;
     const eventosEsteMes = eventos.filter(e => {
-        const eventoDate = new Date(e.fecha);
+        const eventoDate = new Date(e.fecha + 'T00:00:00');
         const now = new Date();
         return eventoDate.getMonth() === now.getMonth() && eventoDate.getFullYear() === now.getFullYear();
     }).length;

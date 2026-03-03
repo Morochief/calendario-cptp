@@ -23,8 +23,12 @@ export default function UpcomingWidget({ eventos }: UpcomingWidgetProps) {
     now.setHours(0, 0, 0, 0);
 
     const proximosEventos = eventos
-        .filter(e => new Date(e.fecha) >= now)
-        .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
+        .filter(e => {
+            // Parse as local time to avoid UTC timezone shift
+            const eventDate = new Date(e.fecha + 'T00:00:00');
+            return eventDate >= now;
+        })
+        .sort((a, b) => new Date(a.fecha + 'T00:00:00').getTime() - new Date(b.fecha + 'T00:00:00').getTime())
         .slice(0, 5);
 
     const formatDate = (fecha: string) => {
@@ -33,9 +37,9 @@ export default function UpcomingWidget({ eventos }: UpcomingWidgetProps) {
     };
 
     const getDaysUntil = (fecha: string) => {
-        const eventDate = new Date(fecha + 'T12:00:00');
+        const eventDate = new Date(fecha + 'T00:00:00');
         const diffTime = eventDate.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays === 0) return 'Hoy';
         if (diffDays === 1) return 'Mañana';
         return `${diffDays} días`;
