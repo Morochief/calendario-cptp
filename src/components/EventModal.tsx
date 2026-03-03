@@ -23,19 +23,24 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
     const [mounted, setMounted] = useState(false);
     const [imagenes, setImagenes] = useState<ImagenEvento[]>([]);
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [showGallery, setShowGallery] = useState(false);
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
     const handleEscape = useCallback((e: KeyboardEvent) => {
-        if (e.key === 'Escape') onClose();
-        if (e.key === 'ArrowRight') setCurrentSlide((s: number) => Math.min(s + 1, imagenes.length - 1));
-        if (e.key === 'ArrowLeft') setCurrentSlide((s: number) => Math.max(s - 1, 0));
-    }, [onClose, imagenes.length]);
+        if (e.key === 'Escape') {
+            if (lightboxUrl) { setLightboxUrl(null); return; }
+            if (showGallery) { setShowGallery(false); return; }
+            onClose();
+        }
+        if (e.key === 'ArrowRight' && showGallery) setCurrentSlide((s: number) => Math.min(s + 1, imagenes.length - 1));
+        if (e.key === 'ArrowLeft' && showGallery) setCurrentSlide((s: number) => Math.max(s - 1, 0));
+    }, [onClose, imagenes.length, showGallery, lightboxUrl]);
 
     useEffect(() => {
         setMounted(true);
         if (evento) {
             document.body.style.overflow = 'hidden';
             document.addEventListener('keydown', handleEscape);
-            // Load gallery images
             const supabase = createClient();
             supabase
                 .from('imagenes_evento')
@@ -45,6 +50,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                 .then(({ data }: { data: ImagenEvento[] | null }) => {
                     setImagenes(data || []);
                     setCurrentSlide(0);
+                    setShowGallery(false);
                 });
         }
         return () => {
@@ -72,328 +78,422 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
     const nextSlide = () => setCurrentSlide((s: number) => Math.min(s + 1, imagenes.length - 1));
 
     return createPortal(
-        <div
-            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="event-modal-title"
-            style={{
-                position: 'fixed', inset: 0, zIndex: 9999,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '1rem',
-                background: 'rgba(0, 0, 0, 0.75)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                animation: 'modalFadeIn 0.2s ease',
-            }}
-        >
+        <>
             <div
+                onClick={(e: React.MouseEvent) => { if (e.target === e.currentTarget) onClose(); }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="event-modal-title"
                 style={{
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '16px',
-                    width: '100%',
-                    maxWidth: '560px',
-                    maxHeight: '92vh',
-                    overflowY: 'auto',
-                    boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
-                    position: 'relative',
-                    animation: 'modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    position: 'fixed', inset: 0, zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '1rem',
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    animation: 'modalFadeIn 0.2s ease',
                 }}
             >
-                {/* Close button */}
-                <button
-                    onClick={onClose}
-                    aria-label="Cerrar modal"
+                <div
                     style={{
-                        position: 'absolute', top: '1rem', right: '1rem', zIndex: 10,
-                        width: '36px', height: '36px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        borderRadius: '50%',
-                        border: '1px solid var(--border-hover)',
-                        background: 'var(--bg-elevated)',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(220,38,38,0.15)';
-                        e.currentTarget.style.color = 'var(--color-primary)';
-                        e.currentTarget.style.borderColor = 'var(--color-primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'var(--bg-elevated)';
-                        e.currentTarget.style.color = 'var(--text-secondary)';
-                        e.currentTarget.style.borderColor = 'var(--border-hover)';
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: '16px',
+                        width: '100%',
+                        maxWidth: '560px',
+                        maxHeight: '92vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+                        position: 'relative',
+                        animation: 'modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                     }}
                 >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
+                    {/* Close button */}
+                    <button
+                        onClick={onClose}
+                        aria-label="Cerrar modal"
+                        style={{
+                            position: 'absolute', top: '1rem', right: '1rem', zIndex: 10,
+                            width: '36px', height: '36px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: '50%',
+                            border: '1px solid var(--border-hover)',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            e.currentTarget.style.background = 'rgba(220,38,38,0.15)';
+                            e.currentTarget.style.color = 'var(--color-primary)';
+                            e.currentTarget.style.borderColor = 'var(--color-primary)';
+                        }}
+                        onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            e.currentTarget.style.background = 'var(--bg-elevated)';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                            e.currentTarget.style.borderColor = 'var(--border-hover)';
+                        }}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
 
-                {/* Main Event Image */}
-                {hasValidImage && !hasGallery && (
-                    <div style={{
-                        width: '100%', background: 'var(--bg-elevated)',
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        borderBottom: '1px solid var(--border-subtle)',
-                        borderRadius: '16px 16px 0 0', overflow: 'hidden',
-                    }}>
-                        <img src={evento.imagen_url!} alt={evento.titulo}
-                            style={{ maxWidth: '100%', maxHeight: '280px', objectFit: 'contain', display: 'block' }} />
-                    </div>
-                )}
-
-                {/* Color accent bar */}
-                <div style={{ height: '4px', background: modalityColor, borderRadius: (hasValidImage && !hasGallery) ? '0' : '16px 16px 0 0' }} />
-
-                {/* Content */}
-                <div style={{ padding: '1.5rem' }}>
-                    {/* Badges */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                        {evento.modalidades && (
-                            <span style={{
-                                fontSize: '0.75rem', fontWeight: 600,
-                                padding: '0.375rem 0.75rem', borderRadius: '100px',
-                                display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-                                color: modalityColor, background: `${modalityColor}20`, border: `1px solid ${modalityColor}40`,
-                            }}>
-                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: modalityColor }} />
-                                {evento.modalidades.nombre}
-                            </span>
-                        )}
-                        {tipoNombre && (
-                            <span style={{
-                                fontSize: '0.6875rem', fontWeight: 600,
-                                padding: '0.25rem 0.625rem', borderRadius: '6px',
-                                color: tipoColor, border: `1px solid ${tipoColor}40`, background: `${tipoColor}15`,
-                            }}>
-                                {tipoNombre}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Title */}
-                    <h2 id="event-modal-title" style={{
-                        fontSize: '1.375rem', fontWeight: 700,
-                        color: 'var(--text-primary)', marginBottom: '1.25rem',
-                        lineHeight: 1.3, letterSpacing: '-0.02em',
-                    }}>
-                        {evento.titulo}
-                    </h2>
-
-                    {/* Info items */}
-                    <div style={{
-                        display: 'flex', flexDirection: 'column', gap: '0.75rem',
-                        marginBottom: '1.5rem', padding: '1rem',
-                        background: 'var(--bg-elevated)', borderRadius: '10px',
-                        border: '1px solid var(--border-subtle)',
-                    }}>
-                        {/* Date */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${modalityColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                                </svg>
-                            </div>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', textTransform: 'capitalize' }}>
-                                {diaSemana}, {dia} de {mes} {anio}
-                            </span>
-                        </div>
-                        {evento.hora && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${modalityColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                                    </svg>
-                                </div>
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>{evento.hora.slice(0, 5)} hs</span>
-                            </div>
-                        )}
-                        {evento.ubicacion && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${modalityColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-                                    </svg>
-                                </div>
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>{evento.ubicacion}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Description */}
-                    {evento.descripcion && (
+                    {/* Main Event Image - ALWAYS visible */}
+                    {hasValidImage && (
                         <div style={{
-                            padding: '1rem', background: 'var(--bg-elevated)', borderRadius: '10px',
-                            border: '1px solid var(--border-subtle)', marginBottom: '1.5rem',
-                            color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.9375rem', whiteSpace: 'pre-line',
+                            width: '100%', background: 'var(--bg-elevated)',
+                            display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            borderBottom: '1px solid var(--border-subtle)',
+                            borderRadius: '16px 16px 0 0', overflow: 'hidden',
                         }}>
-                            {evento.descripcion}
+                            <img src={evento.imagen_url!} alt={evento.titulo}
+                                style={{ maxWidth: '100%', maxHeight: '280px', objectFit: 'contain', display: 'block' }} />
                         </div>
                     )}
 
-                    {/* Maps button */}
-                    {evento.ubicacion_url && (
-                        <a href={evento.ubicacion_url} target="_blank" rel="noopener noreferrer"
-                            style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                width: '100%', padding: '0.875rem', borderRadius: '10px',
-                                background: `${modalityColor}20`, border: `1px solid ${modalityColor}40`,
-                                color: modalityColor, textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem',
-                                transition: 'all 0.2s', marginBottom: hasGallery ? '1.5rem' : '0',
-                            }}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                            </svg>
-                            Ver ubicación en Google Maps
-                        </a>
-                    )}
+                    {/* Color accent bar */}
+                    <div style={{ height: '4px', background: modalityColor, borderRadius: (!hasValidImage) ? '16px 16px 0 0' : '0' }} />
 
-                    {/* ===== CAROUSEL GALLERY ===== */}
-                    {hasGallery && (
-                        <div>
+                    {/* Content */}
+                    <div style={{ padding: '1.5rem' }}>
+                        {/* Badges */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                            {evento.modalidades && (
+                                <span style={{
+                                    fontSize: '0.75rem', fontWeight: 600,
+                                    padding: '0.375rem 0.75rem', borderRadius: '100px',
+                                    display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+                                    color: modalityColor, background: `${modalityColor}20`, border: `1px solid ${modalityColor}40`,
+                                }}>
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: modalityColor }} />
+                                    {evento.modalidades.nombre}
+                                </span>
+                            )}
+                            {tipoNombre && (
+                                <span style={{
+                                    fontSize: '0.6875rem', fontWeight: 600,
+                                    padding: '0.25rem 0.625rem', borderRadius: '6px',
+                                    color: tipoColor, border: `1px solid ${tipoColor}40`, background: `${tipoColor}15`,
+                                }}>
+                                    {tipoNombre}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Title */}
+                        <h2 id="event-modal-title" style={{
+                            fontSize: '1.375rem', fontWeight: 700,
+                            color: 'var(--text-primary)', marginBottom: '1.25rem',
+                            lineHeight: 1.3, letterSpacing: '-0.02em',
+                        }}>
+                            {evento.titulo}
+                        </h2>
+
+                        {/* Info items */}
+                        <div style={{
+                            display: 'flex', flexDirection: 'column', gap: '0.75rem',
+                            marginBottom: '1.5rem', padding: '1rem',
+                            background: 'var(--bg-elevated)', borderRadius: '10px',
+                            border: '1px solid var(--border-subtle)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${modalityColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                                    </svg>
+                                </div>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', textTransform: 'capitalize' }}>
+                                    {diaSemana}, {dia} de {mes} {anio}
+                                </span>
+                            </div>
+                            {evento.hora && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${modalityColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                                        </svg>
+                                    </div>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>{evento.hora.slice(0, 5)} hs</span>
+                                </div>
+                            )}
+                            {evento.ubicacion && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${modalityColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                                        </svg>
+                                    </div>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>{evento.ubicacion}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Description */}
+                        {evento.descripcion && (
                             <div style={{
-                                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                marginBottom: '0.75rem',
+                                padding: '1rem', background: 'var(--bg-elevated)', borderRadius: '10px',
+                                border: '1px solid var(--border-subtle)', marginBottom: '1.5rem',
+                                color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.9375rem', whiteSpace: 'pre-line' as const,
                             }}>
+                                {evento.descripcion}
+                            </div>
+                        )}
+
+                        {/* Maps button */}
+                        {evento.ubicacion_url && (
+                            <a href={evento.ubicacion_url} target="_blank" rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    width: '100%', padding: '0.875rem', borderRadius: '10px',
+                                    background: `${modalityColor}20`, border: `1px solid ${modalityColor}40`,
+                                    color: modalityColor, textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem',
+                                    transition: 'all 0.2s', marginBottom: hasGallery ? '1rem' : '0',
+                                }}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                                </svg>
+                                Ver ubicación en Google Maps
+                            </a>
+                        )}
+
+                        {/* ===== GALLERY TOGGLE BUTTON ===== */}
+                        {hasGallery && !showGallery && (
+                            <button
+                                onClick={() => setShowGallery(true)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    width: '100%', padding: '0.875rem', borderRadius: '10px',
+                                    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
+                                    color: 'var(--text-primary)', cursor: 'pointer',
+                                    fontWeight: 600, fontSize: '0.9rem',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+                                    e.currentTarget.style.borderColor = modalityColor;
+                                    e.currentTarget.style.background = `${modalityColor}10`;
+                                }}
+                                onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                                    e.currentTarget.style.background = 'var(--bg-elevated)';
+                                }}
+                            >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                     <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
                                 </svg>
-                                <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                    Galería ({imagenes.length} {imagenes.length === 1 ? 'foto' : 'fotos'})
-                                </span>
-                            </div>
+                                📸 Ver galería ({imagenes.length} {imagenes.length === 1 ? 'foto' : 'fotos'})
+                            </button>
+                        )}
 
-                            {/* Carousel */}
-                            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
-                                {/* Main image */}
-                                <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: '#000' }}>
-                                    <img
-                                        key={currentSlide}
-                                        src={imagenes[currentSlide].url}
-                                        alt={imagenes[currentSlide].descripcion || `Foto ${currentSlide + 1}`}
+                        {/* ===== CAROUSEL GALLERY (shown on click) ===== */}
+                        {hasGallery && showGallery && (
+                            <div style={{ animation: 'carouselFadeIn 0.3s ease' }}>
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    marginBottom: '0.75rem',
+                                }}>
+                                    <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
+                                        📸 Galería ({imagenes.length} {imagenes.length === 1 ? 'foto' : 'fotos'})
+                                    </span>
+                                    <button
+                                        onClick={() => setShowGallery(false)}
                                         style={{
-                                            width: '100%', height: '100%', objectFit: 'contain',
-                                            display: 'block', animation: 'carouselFadeIn 0.3s ease',
+                                            fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer',
+                                            background: 'none', border: 'none', padding: '0.25rem 0.5rem',
                                         }}
-                                    />
-
-                                    {/* Nav arrows */}
-                                    {imagenes.length > 1 && (<>
-                                        <button onClick={prevSlide} disabled={currentSlide === 0}
-                                            aria-label="Foto anterior"
-                                            style={{
-                                                position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)',
-                                                width: '36px', height: '36px', borderRadius: '50%',
-                                                background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)',
-                                                color: 'white', cursor: currentSlide === 0 ? 'not-allowed' : 'pointer',
-                                                opacity: currentSlide === 0 ? 0.3 : 1,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                transition: 'all 0.2s', zIndex: 2,
-                                            }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="15 18 9 12 15 6" />
-                                            </svg>
-                                        </button>
-                                        <button onClick={nextSlide} disabled={currentSlide === imagenes.length - 1}
-                                            aria-label="Siguiente foto"
-                                            style={{
-                                                position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)',
-                                                width: '36px', height: '36px', borderRadius: '50%',
-                                                background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)',
-                                                color: 'white', cursor: currentSlide === imagenes.length - 1 ? 'not-allowed' : 'pointer',
-                                                opacity: currentSlide === imagenes.length - 1 ? 0.3 : 1,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                transition: 'all 0.2s', zIndex: 2,
-                                            }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="9 18 15 12 9 6" />
-                                            </svg>
-                                        </button>
-
-                                        {/* Slide counter */}
-                                        <div style={{
-                                            position: 'absolute', bottom: '0.75rem', right: '0.75rem',
-                                            background: 'rgba(0,0,0,0.6)', color: 'white',
-                                            fontSize: '0.75rem', fontWeight: 600,
-                                            padding: '0.25rem 0.625rem', borderRadius: '100px',
-                                            border: '1px solid rgba(255,255,255,0.2)',
-                                        }}>
-                                            {currentSlide + 1} / {imagenes.length}
-                                        </div>
-                                    </>)}
+                                    >
+                                        ▲ Ocultar
+                                    </button>
                                 </div>
 
-                                {/* Caption */}
-                                {imagenes[currentSlide].descripcion && (
-                                    <div style={{
-                                        padding: '0.625rem 1rem',
-                                        fontSize: '0.8125rem', color: 'var(--text-secondary)',
-                                        fontStyle: 'italic', borderTop: '1px solid var(--border-subtle)',
-                                    }}>
-                                        {imagenes[currentSlide].descripcion}
-                                    </div>
-                                )}
+                                {/* Carousel */}
+                                <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
+                                    <div
+                                        style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: '#000', cursor: 'zoom-in' }}
+                                        onClick={() => setLightboxUrl(imagenes[currentSlide].url)}
+                                    >
+                                        <img
+                                            key={currentSlide}
+                                            src={imagenes[currentSlide].url}
+                                            alt={imagenes[currentSlide].descripcion || `Foto ${currentSlide + 1}`}
+                                            style={{
+                                                width: '100%', height: '100%', objectFit: 'contain',
+                                                display: 'block', animation: 'carouselFadeIn 0.3s ease',
+                                            }}
+                                        />
 
-                                {/* Dot indicators */}
-                                {imagenes.length > 1 && (
-                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', padding: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
-                                        {imagenes.map((_, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => setCurrentSlide(idx)}
-                                                aria-label={`Ir a foto ${idx + 1}`}
+                                        {/* Nav arrows */}
+                                        {imagenes.length > 1 && (<>
+                                            <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); prevSlide(); }} disabled={currentSlide === 0}
+                                                aria-label="Foto anterior"
                                                 style={{
-                                                    width: idx === currentSlide ? '20px' : '8px',
-                                                    height: '8px', borderRadius: '100px',
-                                                    background: idx === currentSlide ? modalityColor : 'var(--border-hover)',
-                                                    border: 'none', cursor: 'pointer',
-                                                    transition: 'all 0.3s ease', padding: 0,
+                                                    position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)',
+                                                    width: '36px', height: '36px', borderRadius: '50%',
+                                                    background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)',
+                                                    color: 'white', cursor: currentSlide === 0 ? 'not-allowed' : 'pointer',
+                                                    opacity: currentSlide === 0 ? 0.3 : 1,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    transition: 'all 0.2s', zIndex: 2,
+                                                }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="15 18 9 12 15 6" />
+                                                </svg>
+                                            </button>
+                                            <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); nextSlide(); }} disabled={currentSlide === imagenes.length - 1}
+                                                aria-label="Siguiente foto"
+                                                style={{
+                                                    position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)',
+                                                    width: '36px', height: '36px', borderRadius: '50%',
+                                                    background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)',
+                                                    color: 'white', cursor: currentSlide === imagenes.length - 1 ? 'not-allowed' : 'pointer',
+                                                    opacity: currentSlide === imagenes.length - 1 ? 0.3 : 1,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    transition: 'all 0.2s', zIndex: 2,
+                                                }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="9 18 15 12 9 6" />
+                                                </svg>
+                                            </button>
+
+                                            {/* Slide counter */}
+                                            <div style={{
+                                                position: 'absolute', bottom: '0.75rem', right: '0.75rem',
+                                                background: 'rgba(0,0,0,0.6)', color: 'white',
+                                                fontSize: '0.75rem', fontWeight: 600,
+                                                padding: '0.25rem 0.625rem', borderRadius: '100px',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                            }}>
+                                                {currentSlide + 1} / {imagenes.length}
+                                            </div>
+
+                                            {/* Zoom hint */}
+                                            <div style={{
+                                                position: 'absolute', bottom: '0.75rem', left: '0.75rem',
+                                                background: 'rgba(0,0,0,0.6)', color: 'white',
+                                                fontSize: '0.6875rem', fontWeight: 500,
+                                                padding: '0.25rem 0.5rem', borderRadius: '6px',
+                                                border: '1px solid rgba(255,255,255,0.15)',
+                                                display: 'flex', alignItems: 'center', gap: '4px',
+                                            }}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" />
+                                                </svg>
+                                                Ampliar
+                                            </div>
+                                        </>)}
+                                    </div>
+
+                                    {/* Caption */}
+                                    {imagenes[currentSlide].descripcion && (
+                                        <div style={{
+                                            padding: '0.625rem 1rem',
+                                            fontSize: '0.8125rem', color: 'var(--text-secondary)',
+                                            fontStyle: 'italic', borderTop: '1px solid var(--border-subtle)',
+                                        }}>
+                                            {imagenes[currentSlide].descripcion}
+                                        </div>
+                                    )}
+
+                                    {/* Dot indicators */}
+                                    {imagenes.length > 1 && (
+                                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', padding: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+                                            {imagenes.map((_: ImagenEvento, idx: number) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setCurrentSlide(idx)}
+                                                    aria-label={`Ir a foto ${idx + 1}`}
+                                                    style={{
+                                                        width: idx === currentSlide ? '20px' : '8px',
+                                                        height: '8px', borderRadius: '100px',
+                                                        background: idx === currentSlide ? modalityColor : 'var(--border-hover)',
+                                                        border: 'none', cursor: 'pointer',
+                                                        transition: 'all 0.3s ease', padding: 0,
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Thumbnails strip */}
+                                {imagenes.length > 1 && (
+                                    <div style={{
+                                        display: 'flex', gap: '6px', marginTop: '8px',
+                                        overflowX: 'auto', paddingBottom: '4px',
+                                    }}>
+                                        {imagenes.map((img: ImagenEvento, idx: number) => (
+                                            <button
+                                                key={img.id}
+                                                onClick={() => setCurrentSlide(idx)}
+                                                style={{
+                                                    flexShrink: 0, width: '56px', height: '44px',
+                                                    border: `2px solid ${idx === currentSlide ? modalityColor : 'var(--border-subtle)'}`,
+                                                    borderRadius: '6px', overflow: 'hidden',
+                                                    cursor: 'pointer', padding: 0, background: 'var(--bg-elevated)',
+                                                    transition: 'all 0.2s', opacity: idx === currentSlide ? 1 : 0.6,
                                                 }}
-                                            />
+                                            >
+                                                <img src={img.url} alt={`Miniatura ${idx + 1}`}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                            </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
-
-                            {/* Thumbnails strip */}
-                            {imagenes.length > 1 && (
-                                <div style={{
-                                    display: 'flex', gap: '6px', marginTop: '8px',
-                                    overflowX: 'auto', paddingBottom: '4px',
-                                }}>
-                                    {imagenes.map((img, idx) => (
-                                        <button
-                                            key={img.id}
-                                            onClick={() => setCurrentSlide(idx)}
-                                            style={{
-                                                flexShrink: 0, width: '56px', height: '44px',
-                                                border: `2px solid ${idx === currentSlide ? modalityColor : 'var(--border-subtle)'}`,
-                                                borderRadius: '6px', overflow: 'hidden',
-                                                cursor: 'pointer', padding: 0, background: 'var(--bg-elevated)',
-                                                transition: 'all 0.2s', opacity: idx === currentSlide ? 1 : 0.6,
-                                            }}
-                                        >
-                                            <img src={img.url} alt={`Miniatura ${idx + 1}`}
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {/* ===== LIGHTBOX FULLSCREEN ===== */}
+            {lightboxUrl && (
+                <div
+                    onClick={() => setLightboxUrl(null)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 10001,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(0, 0, 0, 0.92)',
+                        cursor: 'zoom-out',
+                        animation: 'modalFadeIn 0.2s ease',
+                    }}
+                >
+                    <img
+                        src={lightboxUrl}
+                        alt="Imagen ampliada"
+                        style={{
+                            maxWidth: '95vw', maxHeight: '95vh',
+                            objectFit: 'contain', borderRadius: '4px',
+                            animation: 'modalScaleIn 0.25s ease',
+                        }}
+                    />
+                    <button
+                        onClick={() => setLightboxUrl(null)}
+                        style={{
+                            position: 'absolute', top: '1.5rem', right: '1.5rem',
+                            width: '44px', height: '44px', borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                            color: 'white', fontSize: '1.5rem', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                    >
+                        ×
+                    </button>
+                    <div style={{
+                        position: 'absolute', bottom: '1.5rem',
+                        color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem',
+                    }}>
+                        Clic o Esc para cerrar
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes modalScaleIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
                 @keyframes carouselFadeIn { from { opacity: 0; } to { opacity: 1; } }
             `}</style>
-        </div>,
+        </>,
         document.body
     );
 }
