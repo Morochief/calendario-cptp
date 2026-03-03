@@ -1668,6 +1668,41 @@ a {
   border-radius: var(--radius-md);
   padding: 0.75rem;
   font-size: 0.75rem;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+  transform-origin: center bottom;
+}
+
+.mini-month::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.03),
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.03),
+      transparent);
+  transition: left 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.mini-month:hover {
+  border-color: var(--border-hover);
+  box-shadow:
+    var(--shadow-md),
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 20px var(--color-primary-glow);
+  transform: translateY(-6px) scale(1.015);
+}
+
+.mini-month:hover::after {
+  left: 120%;
 }
 
 .mini-month-header {
