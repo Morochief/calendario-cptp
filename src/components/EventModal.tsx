@@ -26,8 +26,8 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
 
     const handleEscape = useCallback((e: KeyboardEvent) => {
         if (e.key === 'Escape') onClose();
-        if (e.key === 'ArrowRight') setCurrentSlide(s => Math.min(s + 1, imagenes.length - 1));
-        if (e.key === 'ArrowLeft') setCurrentSlide(s => Math.max(s - 1, 0));
+        if (e.key === 'ArrowRight') setCurrentSlide((s: number) => Math.min(s + 1, imagenes.length - 1));
+        if (e.key === 'ArrowLeft') setCurrentSlide((s: number) => Math.max(s - 1, 0));
     }, [onClose, imagenes.length]);
 
     useEffect(() => {
@@ -42,7 +42,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                 .select('*')
                 .eq('evento_id', evento.id)
                 .order('orden', { ascending: true })
-                .then(({ data }) => {
+                .then(({ data }: { data: ImagenEvento[] | null }) => {
                     setImagenes(data || []);
                     setCurrentSlide(0);
                 });
@@ -68,8 +68,8 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
     const hasValidImage = !!evento.imagen_url && isValidImageUrl(evento.imagen_url);
     const hasGallery = imagenes.length > 0;
 
-    const prevSlide = () => setCurrentSlide(s => Math.max(s - 1, 0));
-    const nextSlide = () => setCurrentSlide(s => Math.min(s + 1, imagenes.length - 1));
+    const prevSlide = () => setCurrentSlide((s: number) => Math.max(s - 1, 0));
+    const nextSlide = () => setCurrentSlide((s: number) => Math.min(s + 1, imagenes.length - 1));
 
     return createPortal(
         <div
