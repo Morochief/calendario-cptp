@@ -2128,3 +2128,99 @@ a.user-dropdown-item,
 .user-dropdown-item.danger:hover {
   background: #FEF2F2;
 }
+
+/* ========================================
+   Event Image Upload - Admin Gallery
+   ======================================== */
+.event-image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.upload-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.gallery-img-wrap {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.gallery-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.gallery-img-wrap:hover img {
+  transform: scale(1.03);
+}
+
+.gallery-delete-btn {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.gallery-img-wrap:hover .gallery-delete-btn {
+  opacity: 1;
+}
+
+.gallery-delete-btn:hover {
+  background: rgba(220, 38, 38, 0.85);
+  border-color: var(--color-primary);
+}
+
+.gallery-caption-input {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  width: 100%;
+  transition: border-color var(--transition-fast);
+}
+
+.gallery-caption-input:focus {
+  outline: none;
+  border-color: var(--border-active);
+  color: var(--text-primary);
+}

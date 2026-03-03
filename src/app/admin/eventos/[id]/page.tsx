@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import EventForm from '@/components/EventForm';
+import EventImageUpload from '@/components/EventImageUpload';
 import { FormSkeleton } from '@/components/Skeleton';
 import EmptyState from '@/components/EmptyState';
 import { createClient } from '@/lib/supabase';
@@ -35,7 +36,6 @@ export default function EditarEventoPage({ params }: { params: Promise<{ id: str
             return;
         }
 
-        // Load evento
         const { data: eventoData, error } = await supabase
             .from('eventos')
             .select('*')
@@ -107,6 +107,11 @@ export default function EditarEventoPage({ params }: { params: Promise<{ id: str
 
                 <div className="admin-card">
                     <EventForm initialData={evento!} isEditing />
+                </div>
+
+                {/* Gallery Section */}
+                <div className="admin-card" style={{ marginTop: '1.5rem' }}>
+                    <EventImageUpload eventoId={id} />
                 </div>
             </div>
         </>

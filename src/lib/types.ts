@@ -26,6 +26,15 @@ export type EventoConModalidad = Evento & {
     tipos_evento?: TipoEvento;
 };
 
+export type ImagenEvento = {
+    id: string;
+    evento_id: string;
+    url: string;
+    descripcion: string | null;
+    orden: number;
+    created_at: string;
+};
+
 export const MESES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre'
