@@ -8,9 +8,10 @@ interface MiniMonthProps {
     mesIndex: number;
     year: number;
     eventos: EventoConModalidad[];
+    onEventClick: (evento: EventoConModalidad) => void;
 }
 
-export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthProps) {
+export default function MiniMonth({ mes, mesIndex, year, eventos, onEventClick }: MiniMonthProps) {
     const [expandido, setExpandido] = useState(false);
 
     const firstDay = new Date(year, mesIndex, 1);
@@ -45,6 +46,7 @@ export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthPro
                 key={dia}
                 className={`mini-day ${tieneEventos ? 'has-event' : ''}`}
                 title={tieneEventos ? eventosDelDia.map(e => e.titulo).join('\n') : ''}
+                onClick={tieneEventos ? () => onEventClick(eventosDelDia[0]) : undefined}
             >
                 <span className="day-number">{dia}</span>
                 {tieneEventos && (
@@ -87,7 +89,13 @@ export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthPro
             {eventosDelMes.length > 0 && (
                 <div className="mini-month-events">
                     {eventosAMostrar.map((e, i) => (
-                        <div key={i} className="mini-event" title={e.titulo}>
+                        <div
+                            key={i}
+                            className="mini-event"
+                            title={e.titulo}
+                            onClick={() => onEventClick(e)}
+                            style={{ cursor: 'pointer' }}
+                        >
                             <span
                                 className="mini-event-dot"
                                 style={{ background: e.modalidades?.color || '#DC2626' }}
@@ -101,7 +109,7 @@ export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthPro
                     {tieneEventosOcultos && (
                         <button
                             className="mini-event-toggle"
-                            onClick={() => setExpandido(true)}
+                            onClick={(e) => { e.stopPropagation(); setExpandido(true); }}
                         >
                             Ver {eventosDelMes.length - 3} más ▼
                         </button>
@@ -109,7 +117,7 @@ export default function MiniMonth({ mes, mesIndex, year, eventos }: MiniMonthPro
                     {expandido && eventosDelMes.length > 3 && (
                         <button
                             className="mini-event-toggle"
-                            onClick={() => setExpandido(false)}
+                            onClick={(e) => { e.stopPropagation(); setExpandido(false); }}
                         >
                             Mostrar menos ▲
                         </button>
