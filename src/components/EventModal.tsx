@@ -1,7 +1,7 @@
 'use client';
 
 import { EventoConModalidad, ImagenEvento } from '@/lib/types';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase';
 
@@ -24,23 +24,49 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
     const [imagenes, setImagenes] = useState<ImagenEvento[]>([]);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showGallery, setShowGallery] = useState(false);
-    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
 
-    const handleEscape = useCallback((e: KeyboardEvent) => {
+    // Refs to avoid stale closures in keyboard handler
+    const showGalleryRef = useRef(showGallery);
+    const lightboxIndexRef = useRef(lightboxIndex);
+    const imagenesRef = useRef(imagenes);
+    const currentSlideRef = useRef(currentSlide);
+
+    showGalleryRef.current = showGallery;
+    lightboxIndexRef.current = lightboxIndex;
+    imagenesRef.current = imagenes;
+    currentSlideRef.current = currentSlide;
+
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-            if (lightboxUrl) { setLightboxUrl(null); return; }
-            if (showGallery) { setShowGallery(false); return; }
+            if (lightboxIndexRef.current !== null) { setLightboxIndex(null); return; }
+            if (showGalleryRef.current) { setShowGallery(false); return; }
             onClose();
         }
-        if (e.key === 'ArrowRight' && showGallery) setCurrentSlide((s: number) => Math.min(s + 1, imagenes.length - 1));
-        if (e.key === 'ArrowLeft' && showGallery) setCurrentSlide((s: number) => Math.max(s - 1, 0));
-    }, [onClose, imagenes.length, showGallery, lightboxUrl]);
+        if (e.key === 'ArrowRight') {
+            if (lightboxIndexRef.current !== null) {
+                setSlideDirection('right');
+                setLightboxIndex((i: number | null) => i !== null ? Math.min(i + 1, imagenesRef.current.length - 1) : null);
+            } else if (showGalleryRef.current) {
+                setCurrentSlide((s: number) => Math.min(s + 1, imagenesRef.current.length - 1));
+            }
+        }
+        if (e.key === 'ArrowLeft') {
+            if (lightboxIndexRef.current !== null) {
+                setSlideDirection('left');
+                setLightboxIndex((i: number | null) => i !== null ? Math.max(i - 1, 0) : null);
+            } else if (showGalleryRef.current) {
+                setCurrentSlide((s: number) => Math.max(s - 1, 0));
+            }
+        }
+    }, [onClose]);
 
+    // Load gallery images — only when evento changes
     useEffect(() => {
         setMounted(true);
         if (evento) {
             document.body.style.overflow = 'hidden';
-            document.addEventListener('keydown', handleEscape);
             const supabase = createClient();
             supabase
                 .from('imagenes_evento')
@@ -51,13 +77,19 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                     setImagenes(data || []);
                     setCurrentSlide(0);
                     setShowGallery(false);
+                    setLightboxIndex(null);
                 });
         }
         return () => {
             document.body.style.overflow = 'unset';
-            document.removeEventListener('keydown', handleEscape);
         };
-    }, [evento, handleEscape]);
+    }, [evento]);
+
+    // Keyboard handler — separate effect so it doesn't re-fetch
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
 
     if (!mounted || !evento) return null;
 
@@ -76,6 +108,9 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
 
     const prevSlide = () => setCurrentSlide((s: number) => Math.max(s - 1, 0));
     const nextSlide = () => setCurrentSlide((s: number) => Math.min(s + 1, imagenes.length - 1));
+
+    const lightboxPrev = () => { setSlideDirection('left'); setLightboxIndex((i: number | null) => i !== null ? Math.max(i - 1, 0) : null); };
+    const lightboxNext = () => { setSlideDirection('right'); setLightboxIndex((i: number | null) => i !== null ? Math.min(i + 1, imagenes.length - 1) : null); };
 
     return createPortal(
         <>
@@ -108,7 +143,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                         animation: 'modalScaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                     }}
                 >
-                    {/* Close button */}
+                    {/* Close */}
                     <button
                         onClick={onClose}
                         aria-label="Cerrar modal"
@@ -120,8 +155,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                             border: '1px solid var(--border-hover)',
                             background: 'var(--bg-elevated)',
                             color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            cursor: 'pointer', transition: 'all 0.2s',
                         }}
                         onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
                             e.currentTarget.style.background = 'rgba(220,38,38,0.15)';
@@ -139,7 +173,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                         </svg>
                     </button>
 
-                    {/* Main Event Image - ALWAYS visible */}
+                    {/* Main Image — always visible */}
                     {hasValidImage && (
                         <div style={{
                             width: '100%', background: 'var(--bg-elevated)',
@@ -152,10 +186,9 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                         </div>
                     )}
 
-                    {/* Color accent bar */}
+                    {/* Color bar */}
                     <div style={{ height: '4px', background: modalityColor, borderRadius: (!hasValidImage) ? '16px 16px 0 0' : '0' }} />
 
-                    {/* Content */}
                     <div style={{ padding: '1.5rem' }}>
                         {/* Badges */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
@@ -181,7 +214,6 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                             )}
                         </div>
 
-                        {/* Title */}
                         <h2 id="event-modal-title" style={{
                             fontSize: '1.375rem', fontWeight: 700,
                             color: 'var(--text-primary)', marginBottom: '1.25rem',
@@ -190,7 +222,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                             {evento.titulo}
                         </h2>
 
-                        {/* Info items */}
+                        {/* Info */}
                         <div style={{
                             display: 'flex', flexDirection: 'column', gap: '0.75rem',
                             marginBottom: '1.5rem', padding: '1rem',
@@ -229,7 +261,6 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                             )}
                         </div>
 
-                        {/* Description */}
                         {evento.descripcion && (
                             <div style={{
                                 padding: '1rem', background: 'var(--bg-elevated)', borderRadius: '10px',
@@ -240,7 +271,6 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                             </div>
                         )}
 
-                        {/* Maps button */}
                         {evento.ubicacion_url && (
                             <a href={evento.ubicacion_url} target="_blank" rel="noopener noreferrer"
                                 style={{
@@ -258,7 +288,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                             </a>
                         )}
 
-                        {/* ===== GALLERY TOGGLE BUTTON ===== */}
+                        {/* GALLERY TOGGLE */}
                         {hasGallery && !showGallery && (
                             <button
                                 onClick={() => setShowGallery(true)}
@@ -267,8 +297,7 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                                     width: '100%', padding: '0.875rem', borderRadius: '10px',
                                     background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
                                     color: 'var(--text-primary)', cursor: 'pointer',
-                                    fontWeight: 600, fontSize: '0.9rem',
-                                    transition: 'all 0.2s',
+                                    fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s',
                                 }}
                                 onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
                                     e.currentTarget.style.borderColor = modalityColor;
@@ -279,163 +308,76 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                                     e.currentTarget.style.background = 'var(--bg-elevated)';
                                 }}
                             >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={modalityColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
-                                </svg>
                                 📸 Ver galería ({imagenes.length} {imagenes.length === 1 ? 'foto' : 'fotos'})
                             </button>
                         )}
 
-                        {/* ===== CAROUSEL GALLERY (shown on click) ===== */}
+                        {/* CAROUSEL */}
                         {hasGallery && showGallery && (
                             <div style={{ animation: 'carouselFadeIn 0.3s ease' }}>
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    marginBottom: '0.75rem',
-                                }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                                     <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>
-                                        📸 Galería ({imagenes.length} {imagenes.length === 1 ? 'foto' : 'fotos'})
+                                        📸 Galería ({imagenes.length})
                                     </span>
-                                    <button
-                                        onClick={() => setShowGallery(false)}
-                                        style={{
-                                            fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer',
-                                            background: 'none', border: 'none', padding: '0.25rem 0.5rem',
-                                        }}
-                                    >
+                                    <button onClick={() => setShowGallery(false)} style={{ fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', padding: '0.25rem 0.5rem' }}>
                                         ▲ Ocultar
                                     </button>
                                 </div>
 
-                                {/* Carousel */}
                                 <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
                                     <div
                                         style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: '#000', cursor: 'zoom-in' }}
-                                        onClick={() => setLightboxUrl(imagenes[currentSlide].url)}
+                                        onClick={() => { setLightboxIndex(currentSlide); setSlideDirection(null); }}
                                     >
                                         <img
                                             key={currentSlide}
                                             src={imagenes[currentSlide].url}
                                             alt={imagenes[currentSlide].descripcion || `Foto ${currentSlide + 1}`}
-                                            style={{
-                                                width: '100%', height: '100%', objectFit: 'contain',
-                                                display: 'block', animation: 'carouselFadeIn 0.3s ease',
-                                            }}
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', animation: 'carouselFadeIn 0.3s ease' }}
                                         />
 
-                                        {/* Nav arrows */}
                                         {imagenes.length > 1 && (<>
-                                            <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); prevSlide(); }} disabled={currentSlide === 0}
-                                                aria-label="Foto anterior"
-                                                style={{
-                                                    position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)',
-                                                    width: '36px', height: '36px', borderRadius: '50%',
-                                                    background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)',
-                                                    color: 'white', cursor: currentSlide === 0 ? 'not-allowed' : 'pointer',
-                                                    opacity: currentSlide === 0 ? 0.3 : 1,
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    transition: 'all 0.2s', zIndex: 2,
-                                                }}>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <polyline points="15 18 9 12 15 6" />
-                                                </svg>
+                                            <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); prevSlide(); }} disabled={currentSlide === 0} aria-label="Anterior"
+                                                style={{ position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)', width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: currentSlide === 0 ? 'not-allowed' : 'pointer', opacity: currentSlide === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', zIndex: 2 }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                                             </button>
-                                            <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); nextSlide(); }} disabled={currentSlide === imagenes.length - 1}
-                                                aria-label="Siguiente foto"
-                                                style={{
-                                                    position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)',
-                                                    width: '36px', height: '36px', borderRadius: '50%',
-                                                    background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)',
-                                                    color: 'white', cursor: currentSlide === imagenes.length - 1 ? 'not-allowed' : 'pointer',
-                                                    opacity: currentSlide === imagenes.length - 1 ? 0.3 : 1,
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    transition: 'all 0.2s', zIndex: 2,
-                                                }}>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <polyline points="9 18 15 12 9 6" />
-                                                </svg>
+                                            <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); nextSlide(); }} disabled={currentSlide === imagenes.length - 1} aria-label="Siguiente"
+                                                style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: currentSlide === imagenes.length - 1 ? 'not-allowed' : 'pointer', opacity: currentSlide === imagenes.length - 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', zIndex: 2 }}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                                             </button>
-
-                                            {/* Slide counter */}
-                                            <div style={{
-                                                position: 'absolute', bottom: '0.75rem', right: '0.75rem',
-                                                background: 'rgba(0,0,0,0.6)', color: 'white',
-                                                fontSize: '0.75rem', fontWeight: 600,
-                                                padding: '0.25rem 0.625rem', borderRadius: '100px',
-                                                border: '1px solid rgba(255,255,255,0.2)',
-                                            }}>
+                                            <div style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem', fontWeight: 600, padding: '0.25rem 0.625rem', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)' }}>
                                                 {currentSlide + 1} / {imagenes.length}
                                             </div>
-
-                                            {/* Zoom hint */}
-                                            <div style={{
-                                                position: 'absolute', bottom: '0.75rem', left: '0.75rem',
-                                                background: 'rgba(0,0,0,0.6)', color: 'white',
-                                                fontSize: '0.6875rem', fontWeight: 500,
-                                                padding: '0.25rem 0.5rem', borderRadius: '6px',
-                                                border: '1px solid rgba(255,255,255,0.15)',
-                                                display: 'flex', alignItems: 'center', gap: '4px',
-                                            }}>
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" />
-                                                </svg>
+                                            <div style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.6875rem', fontWeight: 500, padding: '0.25rem 0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
                                                 Ampliar
                                             </div>
                                         </>)}
                                     </div>
 
-                                    {/* Caption */}
                                     {imagenes[currentSlide].descripcion && (
-                                        <div style={{
-                                            padding: '0.625rem 1rem',
-                                            fontSize: '0.8125rem', color: 'var(--text-secondary)',
-                                            fontStyle: 'italic', borderTop: '1px solid var(--border-subtle)',
-                                        }}>
+                                        <div style={{ padding: '0.625rem 1rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', fontStyle: 'italic', borderTop: '1px solid var(--border-subtle)' }}>
                                             {imagenes[currentSlide].descripcion}
                                         </div>
                                     )}
 
-                                    {/* Dot indicators */}
                                     {imagenes.length > 1 && (
                                         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', padding: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
                                             {imagenes.map((_: ImagenEvento, idx: number) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => setCurrentSlide(idx)}
-                                                    aria-label={`Ir a foto ${idx + 1}`}
-                                                    style={{
-                                                        width: idx === currentSlide ? '20px' : '8px',
-                                                        height: '8px', borderRadius: '100px',
-                                                        background: idx === currentSlide ? modalityColor : 'var(--border-hover)',
-                                                        border: 'none', cursor: 'pointer',
-                                                        transition: 'all 0.3s ease', padding: 0,
-                                                    }}
+                                                <button key={idx} onClick={() => setCurrentSlide(idx)} aria-label={`Foto ${idx + 1}`}
+                                                    style={{ width: idx === currentSlide ? '20px' : '8px', height: '8px', borderRadius: '100px', background: idx === currentSlide ? modalityColor : 'var(--border-hover)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease', padding: 0 }}
                                                 />
                                             ))}
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Thumbnails strip */}
                                 {imagenes.length > 1 && (
-                                    <div style={{
-                                        display: 'flex', gap: '6px', marginTop: '8px',
-                                        overflowX: 'auto', paddingBottom: '4px',
-                                    }}>
+                                    <div style={{ display: 'flex', gap: '6px', marginTop: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                                         {imagenes.map((img: ImagenEvento, idx: number) => (
-                                            <button
-                                                key={img.id}
-                                                onClick={() => setCurrentSlide(idx)}
-                                                style={{
-                                                    flexShrink: 0, width: '56px', height: '44px',
-                                                    border: `2px solid ${idx === currentSlide ? modalityColor : 'var(--border-subtle)'}`,
-                                                    borderRadius: '6px', overflow: 'hidden',
-                                                    cursor: 'pointer', padding: 0, background: 'var(--bg-elevated)',
-                                                    transition: 'all 0.2s', opacity: idx === currentSlide ? 1 : 0.6,
-                                                }}
-                                            >
-                                                <img src={img.url} alt={`Miniatura ${idx + 1}`}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                            <button key={img.id} onClick={() => setCurrentSlide(idx)}
+                                                style={{ flexShrink: 0, width: '56px', height: '44px', border: `2px solid ${idx === currentSlide ? modalityColor : 'var(--border-subtle)'}`, borderRadius: '6px', overflow: 'hidden', cursor: 'pointer', padding: 0, background: 'var(--bg-elevated)', transition: 'all 0.2s', opacity: idx === currentSlide ? 1 : 0.6 }}>
+                                                <img src={img.url} alt={`Mini ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                                             </button>
                                         ))}
                                     </div>
@@ -446,45 +388,140 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                 </div>
             </div>
 
-            {/* ===== LIGHTBOX FULLSCREEN ===== */}
-            {lightboxUrl && (
+            {/* ===== LIGHTBOX FULLSCREEN WITH 3D CAROUSEL ===== */}
+            {lightboxIndex !== null && (
                 <div
-                    onClick={() => setLightboxUrl(null)}
+                    onClick={() => setLightboxIndex(null)}
                     style={{
                         position: 'fixed', inset: 0, zIndex: 10001,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(0, 0, 0, 0.92)',
-                        cursor: 'zoom-out',
+                        background: 'rgba(0, 0, 0, 0.95)',
                         animation: 'modalFadeIn 0.2s ease',
+                        perspective: '1200px',
                     }}
                 >
-                    <img
-                        src={lightboxUrl}
-                        alt="Imagen ampliada"
+                    {/* Main image with 3D transition */}
+                    <div
+                        key={lightboxIndex}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         style={{
-                            maxWidth: '95vw', maxHeight: '95vh',
-                            objectFit: 'contain', borderRadius: '4px',
-                            animation: 'modalScaleIn 0.25s ease',
+                            maxWidth: '90vw', maxHeight: '85vh',
+                            animation: slideDirection === 'right'
+                                ? 'lightboxSlideFromRight 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                                : slideDirection === 'left'
+                                    ? 'lightboxSlideFromLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                                    : 'lightboxZoomIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                            transformStyle: 'preserve-3d',
                         }}
-                    />
-                    <button
-                        onClick={() => setLightboxUrl(null)}
+                    >
+                        <img
+                            src={imagenes[lightboxIndex].url}
+                            alt="Imagen ampliada"
+                            style={{
+                                maxWidth: '90vw', maxHeight: '85vh',
+                                objectFit: 'contain', borderRadius: '8px',
+                                boxShadow: '0 0 60px rgba(0,0,0,0.5), 0 0 120px rgba(0,0,0,0.3)',
+                                display: 'block',
+                            }}
+                        />
+                    </div>
+
+                    {/* Nav arrows */}
+                    {imagenes.length > 1 && (<>
+                        <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); lightboxPrev(); }}
+                            disabled={lightboxIndex === 0}
+                            style={{
+                                position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)',
+                                width: '52px', height: '52px', borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                                color: 'white', cursor: lightboxIndex === 0 ? 'not-allowed' : 'pointer',
+                                opacity: lightboxIndex === 0 ? 0.2 : 0.8,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.3s', backdropFilter: 'blur(8px)',
+                            }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                        </button>
+                        <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); lightboxNext(); }}
+                            disabled={lightboxIndex === imagenes.length - 1}
+                            style={{
+                                position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)',
+                                width: '52px', height: '52px', borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                                color: 'white', cursor: lightboxIndex === imagenes.length - 1 ? 'not-allowed' : 'pointer',
+                                opacity: lightboxIndex === imagenes.length - 1 ? 0.2 : 0.8,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.3s', backdropFilter: 'blur(8px)',
+                            }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                        </button>
+                    </>)}
+
+                    {/* Close */}
+                    <button onClick={() => setLightboxIndex(null)}
                         style={{
                             position: 'absolute', top: '1.5rem', right: '1.5rem',
                             width: '44px', height: '44px', borderRadius: '50%',
                             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
                             color: 'white', fontSize: '1.5rem', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}
-                    >
+                            backdropFilter: 'blur(8px)', transition: 'all 0.2s',
+                        }}>
                         ×
                     </button>
+
+                    {/* Counter + caption */}
                     <div style={{
                         position: 'absolute', bottom: '1.5rem',
-                        color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
                     }}>
-                        Clic o Esc para cerrar
+                        <div style={{
+                            background: 'rgba(0,0,0,0.6)', color: 'white',
+                            fontSize: '0.875rem', fontWeight: 600,
+                            padding: '0.375rem 1rem', borderRadius: '100px',
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            backdropFilter: 'blur(8px)',
+                        }}>
+                            {lightboxIndex + 1} / {imagenes.length}
+                        </div>
+                        {imagenes[lightboxIndex].descripcion && (
+                            <div style={{
+                                color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem',
+                                fontStyle: 'italic', textAlign: 'center', maxWidth: '400px',
+                            }}>
+                                {imagenes[lightboxIndex].descripcion}
+                            </div>
+                        )}
+                        <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>
+                            ← → para navegar · Esc para cerrar
+                        </div>
                     </div>
+
+                    {/* Thumbnail strip */}
+                    {imagenes.length > 1 && (
+                        <div style={{
+                            position: 'absolute', bottom: '5.5rem',
+                            display: 'flex', gap: '6px', justifyContent: 'center',
+                        }}>
+                            {imagenes.map((img: ImagenEvento, idx: number) => (
+                                <button key={img.id}
+                                    onClick={(e: React.MouseEvent) => {
+                                        e.stopPropagation();
+                                        setSlideDirection(idx > lightboxIndex! ? 'right' : 'left');
+                                        setLightboxIndex(idx);
+                                    }}
+                                    style={{
+                                        width: '48px', height: '36px', borderRadius: '6px',
+                                        overflow: 'hidden', padding: 0, cursor: 'pointer',
+                                        border: `2px solid ${idx === lightboxIndex ? 'white' : 'rgba(255,255,255,0.2)'}`,
+                                        opacity: idx === lightboxIndex ? 1 : 0.5,
+                                        transition: 'all 0.3s', background: '#000',
+                                        transform: idx === lightboxIndex ? 'scale(1.1)' : 'scale(1)',
+                                    }}>
+                                    <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -492,6 +529,18 @@ export default function EventModal({ evento, onClose }: EventModalProps) {
                 @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes modalScaleIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
                 @keyframes carouselFadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes lightboxZoomIn {
+                    from { opacity: 0; transform: scale(0.7) rotateY(15deg); }
+                    to { opacity: 1; transform: scale(1) rotateY(0deg); }
+                }
+                @keyframes lightboxSlideFromRight {
+                    from { opacity: 0; transform: translateX(100px) rotateY(-12deg) scale(0.9); }
+                    to { opacity: 1; transform: translateX(0) rotateY(0deg) scale(1); }
+                }
+                @keyframes lightboxSlideFromLeft {
+                    from { opacity: 0; transform: translateX(-100px) rotateY(12deg) scale(0.9); }
+                    to { opacity: 1; transform: translateX(0) rotateY(0deg) scale(1); }
+                }
             `}</style>
         </>,
         document.body
