@@ -178,16 +178,19 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
 
                 if (error) throw error;
                 showToast('Evento actualizado correctamente', 'success');
+                router.push('/admin');
             } else {
-                const { error } = await supabase
+                const { data: newEvento, error } = await supabase
                     .from('eventos')
-                    .insert(validation.data);
+                    .insert(validation.data)
+                    .select('id')
+                    .single();
 
                 if (error) throw error;
-                showToast('Evento creado correctamente', 'success');
+                showToast('Evento creado. Ahora podés agregar fotos a la galería.', 'success');
+                // Redirect to edit page so user can add gallery images
+                router.push(`/admin/eventos/${newEvento.id}`);
             }
-
-            router.push('/admin');
         } catch (err) {
             console.error('Error saving event:', err);
             showToast('Error al guardar el evento', 'error');
@@ -198,200 +201,164 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
 
     return (
         <form onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-                <label htmlFor="titulo">
-                    Título del evento <span style={{ color: 'red' }}>*</span>
-                </label>
-                <input
-                    id="titulo"
-                    type="text"
-                    value={titulo}
-                    onChange={(e) => setTitulo(e.target.value)}
-                    placeholder="Ej: 1.ª Fecha Campeonato Nacional"
-                    required
-                    aria-invalid={!!errors.titulo}
-                    aria-describedby={errors.titulo ? 'titulo-error' : undefined}
-                />
-                {errors.titulo && (
-                    <span id="titulo-error" className="field-error">{errors.titulo}</span>
-                )}
-            </div>
+            {/* Section: Basic Info */}
+            <div className="admin-form-section">
+                <div className="admin-form-section-header">📋 Información del Evento</div>
 
-            {modalidades.length === 0 ? (
-                <SelectEmptyState entityName="modalidades" createHref="/admin/modalidades" />
-            ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div className="form-group">
-                        <label htmlFor="modalidad">
-                            Modalidad <span style={{ color: 'red' }}>*</span>
-                        </label>
-                        <select
-                            id="modalidad"
-                            value={modalidadId}
-                            onChange={(e) => setModalidadId(e.target.value)}
-                            required
-                            aria-invalid={!!errors.modalidad_id}
-                        >
-                            {modalidades.map(mod => (
-                                <option key={mod.id} value={mod.id}>
-                                    {mod.nombre}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.modalidad_id && (
-                            <span className="field-error">{errors.modalidad_id}</span>
-                        )}
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="tipo">
-                            Tipo de evento <span style={{ color: 'red' }}>*</span>
-                        </label>
-                        <select
-                            id="tipo"
-                            value={tipoEventoId}
-                            onChange={(e) => setTipoEventoId(e.target.value)}
-                            required
-                            aria-invalid={!!errors.tipo_evento_id}
-                        >
-                            {tiposEvento.map(t => (
-                                <option key={t.id} value={t.id}>
-                                    {t.nombre}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
-                    <label htmlFor="fecha">
-                        Fecha <span style={{ color: 'red' }}>*</span>
+                    <label htmlFor="titulo">
+                        Título del evento <span style={{ color: 'var(--color-primary)' }}>*</span>
                     </label>
                     <input
-                        id="fecha"
-                        type="date"
-                        value={fecha}
-                        onChange={(e) => setFecha(e.target.value)}
+                        id="titulo"
+                        type="text"
+                        value={titulo}
+                        onChange={(e) => setTitulo(e.target.value)}
+                        placeholder="Ej: 1.ª Fecha Campeonato Nacional"
                         required
-                        aria-invalid={!!errors.fecha}
+                        aria-invalid={!!errors.titulo}
+                        aria-describedby={errors.titulo ? 'titulo-error' : undefined}
                     />
-                    {errors.fecha && (
-                        <span className="field-error">{errors.fecha}</span>
+                    {errors.titulo && (
+                        <span id="titulo-error" className="field-error">{errors.titulo}</span>
                     )}
                 </div>
 
+                {modalidades.length === 0 ? (
+                    <SelectEmptyState entityName="modalidades" createHref="/admin/modalidades" />
+                ) : (
+                    <div className="admin-form-row">
+                        <div className="form-group">
+                            <label htmlFor="modalidad">
+                                Modalidad <span style={{ color: 'var(--color-primary)' }}>*</span>
+                            </label>
+                            <select
+                                id="modalidad"
+                                value={modalidadId}
+                                onChange={(e) => setModalidadId(e.target.value)}
+                                required
+                                aria-invalid={!!errors.modalidad_id}
+                            >
+                                {modalidades.map(mod => (
+                                    <option key={mod.id} value={mod.id}>{mod.nombre}</option>
+                                ))}
+                            </select>
+                            {errors.modalidad_id && (
+                                <span className="field-error">{errors.modalidad_id}</span>
+                            )}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="tipo">
+                                Tipo de evento <span style={{ color: 'var(--color-primary)' }}>*</span>
+                            </label>
+                            <select
+                                id="tipo"
+                                value={tipoEventoId}
+                                onChange={(e) => setTipoEventoId(e.target.value)}
+                                required
+                                aria-invalid={!!errors.tipo_evento_id}
+                            >
+                                {tiposEvento.map(t => (
+                                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Section: Date & Location */}
+            <div className="admin-form-section">
+                <div className="admin-form-section-header">📅 Fecha y Ubicación</div>
+
+                <div className="admin-form-row">
+                    <div className="form-group">
+                        <label htmlFor="fecha">
+                            Fecha <span style={{ color: 'var(--color-primary)' }}>*</span>
+                        </label>
+                        <input id="fecha" type="date" value={fecha}
+                            onChange={(e) => setFecha(e.target.value)} required aria-invalid={!!errors.fecha} />
+                        {errors.fecha && <span className="field-error">{errors.fecha}</span>}
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="hora">Hora</label>
+                        <input id="hora" type="time" value={hora}
+                            onChange={(e) => setHora(e.target.value)} />
+                    </div>
+                </div>
+
                 <div className="form-group">
-                    <label htmlFor="hora">Hora</label>
-                    <input
-                        id="hora"
-                        type="time"
-                        value={hora}
-                        onChange={(e) => setHora(e.target.value)}
-                    />
+                    <label htmlFor="ubicacion">Ubicación / Polígono</label>
+                    <input id="ubicacion" type="text" value={ubicacion}
+                        onChange={(e) => setUbicacion(e.target.value)}
+                        placeholder="Ej: Polígono de Tiro 10M - Comité Olímpico Paraguayo"
+                        aria-invalid={!!errors.ubicacion} />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="ubicacion_url">📍 Link de Ubicación (Google Maps)</label>
+                    <input id="ubicacion_url" type="url" value={ubicacionUrl}
+                        onChange={(e) => setUbicacionUrl(e.target.value)}
+                        placeholder="https://maps.app.goo.gl/..."
+                        aria-invalid={!!errors.ubicacion_url} />
+                    {errors.ubicacion_url && <span className="field-error">{errors.ubicacion_url}</span>}
                 </div>
             </div>
 
-            <div className="form-group">
-                <label htmlFor="ubicacion">Ubicación / Polígono</label>
-                <input
-                    id="ubicacion"
-                    type="text"
-                    value={ubicacion}
-                    onChange={(e) => setUbicacion(e.target.value)}
-                    placeholder="Ej: Polígono de Tiro 10M - Comité Olímpico Paraguayo"
-                    aria-invalid={!!errors.ubicacion}
-                />
-            </div>
+            {/* Section: Image */}
+            <div className="admin-form-section">
+                <div className="admin-form-section-header">🖼️ Imagen del Evento</div>
 
-            <div className="form-group">
-                <label htmlFor="ubicacion_url">
-                    📍 Link de Ubicación (Google Maps)
-                </label>
-                <input
-                    id="ubicacion_url"
-                    type="url"
-                    value={ubicacionUrl}
-                    onChange={(e) => setUbicacionUrl(e.target.value)}
-                    placeholder="https://maps.app.goo.gl/..."
-                    aria-invalid={!!errors.ubicacion_url}
-                />
-                {errors.ubicacion_url && (
-                    <span className="field-error">{errors.ubicacion_url}</span>
-                )}
-            </div>
+                <div className="admin-form-upload">
+                    <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                        <label htmlFor="imagen_file">Subir imagen local</label>
+                        <input id="imagen_file" type="file" accept="image/*"
+                            onChange={handleImageChange} disabled={loading || uploadingImage} />
+                        {imagenFile && (
+                            <span style={{ fontSize: '0.8rem', color: 'var(--color-success)', marginTop: '0.25rem', display: 'block' }}>
+                                ✓ {imagenFile.name}
+                            </span>
+                        )}
+                    </div>
 
-            <div className="form-group" style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px', background: '#f9f9f9' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                    🖼️ Imagen del Evento (opcional)
-                </label>
-                
-                <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="imagen_file" style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Subir Imagen Local:</label>
-                    <input
-                        id="imagen_file"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        disabled={loading || uploadingImage}
-                    />
-                    {imagenFile && <span style={{ fontSize: '0.8rem', color: 'green', marginLeft: '0.5rem' }}>Archivo seleccionado: {imagenFile.name}</span>}
+                    <div className="admin-form-upload-divider">— o —</div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label htmlFor="imagen_url">URL de imagen existente</label>
+                        <input id="imagen_url" type="url" value={imagenUrl}
+                            onChange={(e) => {
+                                setImagenUrl(e.target.value);
+                                setImagenFile(null);
+                                const fileInput = document.getElementById('imagen_file') as HTMLInputElement;
+                                if (fileInput) fileInput.value = '';
+                            }}
+                            placeholder="https://example.com/image.jpg"
+                            aria-invalid={!!errors.imagen_url}
+                            disabled={loading || uploadingImage} />
+                    </div>
+                    {errors.imagen_url && (
+                        <span className="field-error" style={{ display: 'block', marginTop: '0.25rem' }}>{errors.imagen_url}</span>
+                    )}
                 </div>
-
-                <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#666', fontSize: '0.9rem' }}>
-                    - o -
-                </div>
-
-                <div>
-                    <label htmlFor="imagen_url" style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.25rem' }}>URL de Imagen existente:</label>
-                    <input
-                        id="imagen_url"
-                        type="url"
-                        value={imagenUrl}
-                        onChange={(e) => {
-                            setImagenUrl(e.target.value);
-                            setImagenFile(null); // Clear file if they type a URL
-                            const fileInput = document.getElementById('imagen_file') as HTMLInputElement;
-                            if(fileInput) fileInput.value = '';
-                        }}
-                        placeholder="https://example.com/image.jpg"
-                        aria-invalid={!!errors.imagen_url}
-                        disabled={loading || uploadingImage}
-                    />
-                </div>
-                {errors.imagen_url && (
-                    <span className="field-error" style={{ display: 'block', marginTop: '0.25rem' }}>{errors.imagen_url}</span>
-                )}
             </div>
 
-            <div className="form-group">
-                <label htmlFor="descripcion">Descripción (opcional)</label>
-                <textarea
-                    id="descripcion"
-                    value={descripcion}
-                    onChange={(e) => setDescripcion(e.target.value)}
-                    placeholder="Información adicional sobre el evento..."
-                    rows={3}
-                    aria-invalid={!!errors.descripcion}
-                />
+            {/* Section: Description */}
+            <div className="admin-form-section">
+                <div className="admin-form-section-header">📝 Descripción</div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label htmlFor="descripcion">Descripción (opcional)</label>
+                    <textarea id="descripcion" value={descripcion}
+                        onChange={(e) => setDescripcion(e.target.value)}
+                        placeholder="Información adicional sobre el evento..."
+                        rows={4} aria-invalid={!!errors.descripcion} />
+                </div>
             </div>
 
-            <div style={{
-                display: 'flex',
-                gap: '1rem',
-                justifyContent: 'flex-end',
-                marginTop: '1.5rem'
-            }}>
-                <Link href="/admin" className="btn btn-secondary">
-                    Cancelar
-                </Link>
-                <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading || uploadingImage}
-                    aria-busy={loading || uploadingImage}
-                >
+            {/* Actions */}
+            <div className="admin-form-actions">
+                <Link href="/admin" className="btn btn-secondary">Cancelar</Link>
+                <button type="submit" className="btn btn-primary"
+                    disabled={loading || uploadingImage} aria-busy={loading || uploadingImage}>
                     {uploadingImage ? 'Subiendo imagen...' : loading ? 'Guardando...' : isEditing ? '💾 Guardar Cambios' : '💾 Guardar Evento'}
                 </button>
             </div>
