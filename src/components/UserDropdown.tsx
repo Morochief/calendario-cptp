@@ -50,7 +50,7 @@ export default function UserDropdown({ email, onLogout }: UserDropdownProps) {
                     </div>
                     <div className="user-dropdown-divider" />
                     <Link href="/admin" className="user-dropdown-item" role="menuitem" onClick={() => setIsOpen(false)}>
-                        <span>⚙️</span>
+                        <span></span>
                         Panel Admin
                     </Link>
                     <button
@@ -61,7 +61,7 @@ export default function UserDropdown({ email, onLogout }: UserDropdownProps) {
                         }}
                         role="menuitem"
                     >
-                        <span>🚪</span>
+                        <span></span>
                         Cerrar sesión
                     </button>
                 </div>

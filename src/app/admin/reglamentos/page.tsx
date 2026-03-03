@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Header from '@/components/Header';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { createClient } from '@/lib/supabase';
 
 interface Reglamento {
@@ -62,7 +62,6 @@ export default function ReglamentosPage() {
         const supabase = createClient();
 
         try {
-            // 1. Upload file to Storage
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
@@ -73,22 +72,16 @@ export default function ReglamentosPage() {
 
             if (uploadError) throw uploadError;
 
-            // 2. Get Public URL
             const { data: { publicUrl } } = supabase.storage
                 .from('reglamentos')
                 .getPublicUrl(filePath);
 
-            // 3. Insert into Database
             const { error: dbError } = await supabase
                 .from('reglamentos')
-                .insert({
-                    titulo,
-                    url: publicUrl
-                });
+                .insert({ titulo, url: publicUrl });
 
             if (dbError) throw dbError;
 
-            // Success
             resetForm();
             loadReglamentos();
         } catch (error) {
@@ -109,15 +102,10 @@ export default function ReglamentosPage() {
         if (!confirm('¿Eliminar este reglamento?')) return;
 
         const supabase = createClient();
-
-        // Extract filename from URL to delete from storage
-        // URL format: .../reglamentos/filename.pdf
         const fileName = url.split('/').pop();
 
         if (fileName) {
-            await supabase.storage
-                .from('reglamentos')
-                .remove([fileName]);
+            await supabase.storage.from('reglamentos').remove([fileName]);
         }
 
         await supabase.from('reglamentos').delete().eq('id', id);
@@ -129,9 +117,7 @@ export default function ReglamentosPage() {
             <>
                 <Header />
                 <div className="admin-container">
-                    <div className="loading">
-                        <div className="spinner"></div>
-                    </div>
+                    <div className="loading"><div className="spinner"></div></div>
                 </div>
             </>
         );
@@ -141,29 +127,26 @@ export default function ReglamentosPage() {
         <>
             <Header />
             <div className="admin-container">
+                <Breadcrumbs />
                 <div className="admin-header">
                     <div>
-                        <h2 className="section-title">Gestión de Reglamentos (PDF)</h2>
-                        <Link href="/admin" style={{ color: '#6B7280', fontSize: '0.875rem' }}>
-                            ← Volver al panel
-                        </Link>
+                        <h2 className="section-title">Gestión de Reglamentos</h2>
                     </div>
                     {!showForm && (
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="btn btn-primary"
-                        >
-                            ➕ Nuevo Reglamento
+                        <button onClick={() => setShowForm(true)} className="btn btn-primary">
+                            Nuevo Reglamento
                         </button>
                     )}
                 </div>
 
                 {showForm && (
-                    <div className="admin-card" style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>Desplegar Nuevo Reglamento</h3>
+                    <div className="admin-form-section" style={{ marginBottom: '1.5rem' }}>
+                        <div className="admin-form-section-header">
+                            Subir Nuevo Reglamento
+                        </div>
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
-                                <label htmlFor="titulo">Título del Reglamento *</label>
+                                <label htmlFor="titulo">Título del Reglamento <span style={{ color: 'var(--color-primary)' }}>*</span></label>
                                 <input
                                     id="titulo"
                                     type="text"
@@ -174,36 +157,38 @@ export default function ReglamentosPage() {
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="file">Archivo PDF *</label>
-                                <input
-                                    id="file"
-                                    type="file"
-                                    accept=".pdf"
-                                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                    required
-                                />
+                            <div className="admin-form-upload">
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label htmlFor="file">Archivo PDF <span style={{ color: 'var(--color-primary)' }}>*</span></label>
+                                    <input
+                                        id="file"
+                                        type="file"
+                                        accept=".pdf"
+                                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                        required
+                                    />
+                                </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                            <div className="admin-form-actions">
                                 <button type="button" onClick={resetForm} className="btn btn-secondary">
                                     Cancelar
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={uploading}>
-                                    {uploading ? 'Subiendo...' : '💾 Guardar'}
+                                    {uploading ? 'Subiendo...' : 'Guardar'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 )}
 
-                <div className="admin-card">
-                    <h3 style={{ marginBottom: '1.5rem' }}>
+                <div className="admin-form-section">
+                    <div className="admin-form-section-header">
                         Reglamentos Publicados ({reglamentos.length})
-                    </h3>
+                    </div>
 
                     {reglamentos.length === 0 ? (
-                        <p style={{ textAlign: 'center', padding: '2rem', color: '#6B7280' }}>
+                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                             No hay reglamentos cargados.
                         </p>
                     ) : (
@@ -229,9 +214,9 @@ export default function ReglamentosPage() {
                                                     href={reg.url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    style={{ color: '#2563EB', textDecoration: 'underline' }}
+                                                    style={{ color: 'var(--color-secondary)', textDecoration: 'underline' }}
                                                 >
-                                                    📄 Ver PDF
+                                                    Ver PDF
                                                 </a>
                                             </td>
                                             <td>
@@ -241,7 +226,7 @@ export default function ReglamentosPage() {
                                                         className="btn btn-danger"
                                                         style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
                                                     >
-                                                        🗑️ Eliminar
+                                                        Eliminar
                                                     </button>
                                                 </div>
                                             </td>

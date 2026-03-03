@@ -203,7 +203,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
         <form onSubmit={handleSubmit} noValidate>
             {/* Section: Basic Info */}
             <div className="admin-form-section">
-                <div className="admin-form-section-header">📋 Información del Evento</div>
+                <div className="admin-form-section-header">Información del Evento</div>
 
                 <div className="form-group">
                     <label htmlFor="titulo">
@@ -269,7 +269,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
 
             {/* Section: Date & Location */}
             <div className="admin-form-section">
-                <div className="admin-form-section-header">📅 Fecha y Ubicación</div>
+                <div className="admin-form-section-header">Fecha y Ubicación</div>
 
                 <div className="admin-form-row">
                     <div className="form-group">
@@ -296,7 +296,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="ubicacion_url">📍 Link de Ubicación (Google Maps)</label>
+                    <label htmlFor="ubicacion_url">Link de Ubicación (Google Maps)</label>
                     <input id="ubicacion_url" type="url" value={ubicacionUrl}
                         onChange={(e) => setUbicacionUrl(e.target.value)}
                         placeholder="https://maps.app.goo.gl/..."
@@ -307,7 +307,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
 
             {/* Section: Image */}
             <div className="admin-form-section">
-                <div className="admin-form-section-header">🖼️ Imagen del Evento</div>
+                <div className="admin-form-section-header">Imagen del Evento</div>
 
                 <div className="admin-form-upload">
                     <div className="form-group" style={{ marginBottom: '0.5rem' }}>
@@ -344,7 +344,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
 
             {/* Section: Description */}
             <div className="admin-form-section">
-                <div className="admin-form-section-header">📝 Descripción</div>
+                <div className="admin-form-section-header">Descripción</div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                     <label htmlFor="descripcion">Descripción (opcional)</label>
                     <textarea id="descripcion" value={descripcion}
@@ -359,7 +359,7 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
                 <Link href="/admin" className="btn btn-secondary">Cancelar</Link>
                 <button type="submit" className="btn btn-primary"
                     disabled={loading || uploadingImage} aria-busy={loading || uploadingImage}>
-                    {uploadingImage ? 'Subiendo imagen...' : loading ? 'Guardando...' : isEditing ? '💾 Guardar Cambios' : '💾 Guardar Evento'}
+                    {uploadingImage ? 'Subiendo imagen...' : loading ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Guardar Evento'}
                 </button>
             </div>
         </form>

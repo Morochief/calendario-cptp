@@ -15,6 +15,7 @@ const ROUTES: Record<string, BreadcrumbItem> = {
     '/admin/modalidades': { label: 'Modalidades' },
     '/admin/tipos-evento': { label: 'Tipos de Evento' },
     '/admin/inscripciones': { label: 'Inscripciones' },
+    '/admin/reglamentos': { label: 'Reglamentos' },
 };
 
 export default function Breadcrumbs() {
@@ -22,14 +23,14 @@ export default function Breadcrumbs() {
 
     // Generate breadcrumb items from current path
     const getBreadcrumbs = (): BreadcrumbItem[] => {
-        const items: BreadcrumbItem[] = [{ label: '🏠 Inicio', href: '/' }];
+        const items: BreadcrumbItem[] = [{ label: 'Inicio', href: '/' }];
 
         if (!pathname.startsWith('/admin')) {
             return items;
         }
 
         // Add admin root
-        items.push({ label: '⚙️ Admin', href: '/admin' });
+        items.push({ label: 'Admin', href: '/admin' });
 
         // Check for known routes
         const route = ROUTES[pathname];

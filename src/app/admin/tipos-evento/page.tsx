@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { createClient } from '@/lib/supabase';
 import { TipoEvento } from '@/lib/types';
 
@@ -98,9 +99,7 @@ export default function TiposEventoPage() {
             <>
                 <Header />
                 <div className="admin-container">
-                    <div className="loading">
-                        <div className="spinner"></div>
-                    </div>
+                    <div className="loading"><div className="spinner"></div></div>
                 </div>
             </>
         );
@@ -110,30 +109,25 @@ export default function TiposEventoPage() {
         <>
             <Header />
             <div className="admin-container">
+                <Breadcrumbs />
                 <div className="admin-header">
                     <div>
                         <h2 className="section-title">Tipos de Evento</h2>
-                        <Link href="/admin" style={{ color: '#6B7280', fontSize: '0.875rem' }}>
-                            ← Volver al panel
-                        </Link>
                     </div>
                     {!showForm && (
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="btn btn-primary"
-                        >
-                            ➕ Nuevo Tipo
+                        <button onClick={() => setShowForm(true)} className="btn btn-primary">
+                            Nuevo Tipo
                         </button>
                     )}
                 </div>
 
                 {showForm && (
-                    <div className="admin-card" style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>
+                    <div className="admin-form-section" style={{ marginBottom: '1.5rem' }}>
+                        <div className="admin-form-section-header">
                             {editingId ? 'Editar Tipo' : 'Nuevo Tipo de Evento'}
-                        </h3>
+                        </div>
                         <form onSubmit={handleSubmit}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'end' }}>
+                            <div className="admin-form-row" style={{ gridTemplateColumns: '1fr auto', alignItems: 'end' }}>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                     <label htmlFor="nombre">Nombre</label>
                                     <input
@@ -156,71 +150,73 @@ export default function TiposEventoPage() {
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                            <div className="admin-form-actions">
                                 <button type="button" onClick={handleCancel} className="btn btn-secondary">
                                     Cancelar
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? 'Guardando...' : '💾 Guardar'}
+                                    {saving ? 'Guardando...' : 'Guardar'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 )}
 
-                <div className="admin-card">
-                    <h3 style={{ marginBottom: '1.5rem' }}>
+                <div className="admin-form-section">
+                    <div className="admin-form-section-header">
                         Tipos ({tipos.length})
-                    </h3>
+                    </div>
 
                     {tipos.length === 0 ? (
-                        <p style={{ textAlign: 'center', padding: '2rem', color: '#6B7280' }}>
-                            No hay tipos de evento. ¡Crea el primero!
+                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                            No hay tipos de evento. Crea el primero.
                         </p>
                     ) : (
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Color</th>
-                                    <th>Nombre</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {tipos.map(tipo => (
-                                    <tr key={tipo.id}>
-                                        <td>
-                                            <span style={{
-                                                display: 'inline-block',
-                                                width: '24px',
-                                                height: '24px',
-                                                borderRadius: '4px',
-                                                background: tipo.color
-                                            }} />
-                                        </td>
-                                        <td style={{ fontWeight: 500 }}>{tipo.nombre}</td>
-                                        <td>
-                                            <div className="admin-actions">
-                                                <button
-                                                    onClick={() => handleEdit(tipo)}
-                                                    className="btn btn-secondary"
-                                                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
-                                                >
-                                                    ✏️ Editar
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(tipo.id)}
-                                                    className="btn btn-danger"
-                                                    style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
-                                        </td>
+                        <div className="admin-table-wrapper">
+                            <table className="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Color</th>
+                                        <th>Nombre</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {tipos.map(tipo => (
+                                        <tr key={tipo.id}>
+                                            <td>
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    borderRadius: '4px',
+                                                    background: tipo.color
+                                                }} />
+                                            </td>
+                                            <td style={{ fontWeight: 500 }}>{tipo.nombre}</td>
+                                            <td>
+                                                <div className="admin-actions">
+                                                    <button
+                                                        onClick={() => handleEdit(tipo)}
+                                                        className="btn btn-secondary"
+                                                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                    >
+                                                        Editar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(tipo.id)}
+                                                        className="btn btn-danger"
+                                                        style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+                                                    >
+                                                        Eliminar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </div>

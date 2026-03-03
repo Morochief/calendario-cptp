@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Header from '@/components/Header';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { createClient } from '@/lib/supabase';
 import { Inscripcion, Modalidad, Evento, TipoEvento } from '@/lib/types';
 
@@ -177,29 +177,27 @@ export default function InscripcionesPage() {
         <>
             <Header />
             <div className="admin-container">
+                <Breadcrumbs />
                 <div className="admin-header">
                     <div>
                         <h2 className="section-title">Inscripciones</h2>
-                        <Link href="/admin" style={{ color: '#6B7280', fontSize: '0.875rem' }}>
-                            ← Volver al panel
-                        </Link>
                     </div>
                     {!showForm && (
                         <button onClick={() => setShowForm(true)} className="btn btn-primary">
-                            ➕ Nueva Inscripción
+                            Nueva Inscripción
                         </button>
                     )}
                 </div>
 
                 {showForm && (
-                    <div className="admin-card" style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>
+                    <div className="admin-form-section" style={{ marginBottom: '1.5rem' }}>
+                        <div className="admin-form-section-header">
                             {editingId ? 'Editar Inscripción' : 'Nueva Inscripción'}
-                        </h3>
+                        </div>
                         <form onSubmit={handleSubmit}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="admin-form-row">
                                 <div className="form-group">
-                                    <label htmlFor="nombre">Nombre completo *</label>
+                                    <label htmlFor="nombre">Nombre completo <span style={{ color: 'var(--color-primary)' }}>*</span></label>
                                     <input
                                         id="nombre"
                                         type="text"
@@ -210,7 +208,7 @@ export default function InscripcionesPage() {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="telefono">Teléfono *</label>
+                                    <label htmlFor="telefono">Teléfono <span style={{ color: 'var(--color-primary)' }}>*</span></label>
                                     <input
                                         id="telefono"
                                         type="tel"
@@ -222,7 +220,7 @@ export default function InscripcionesPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="admin-form-row">
                                 <div className="form-group">
                                     <label htmlFor="email">Email (opcional)</label>
                                     <input
@@ -234,7 +232,7 @@ export default function InscripcionesPage() {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label htmlFor="modalidad">Modalidad *</label>
+                                    <label htmlFor="modalidad">Modalidad <span style={{ color: 'var(--color-primary)' }}>*</span></label>
                                     <select
                                         id="modalidad"
                                         value={modalidadId}
@@ -251,9 +249,9 @@ export default function InscripcionesPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="admin-form-row">
                                 <div className="form-group">
-                                    <label htmlFor="tipoEvento">Tipo de Evento *</label>
+                                    <label htmlFor="tipoEvento">Tipo de Evento <span style={{ color: 'var(--color-primary)' }}>*</span></label>
                                     <select
                                         id="tipoEvento"
                                         value={tipoEventoId}
@@ -275,7 +273,7 @@ export default function InscripcionesPage() {
                                         <option value="">-- Inscripción general --</option>
                                         {eventosDeModalidad.map(e => (
                                             <option key={e.id} value={e.id}>
-                                                {new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-ES')} - {e.titulo}
+                                                {new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-ES')} - {e.titulo}
                                             </option>
                                         ))}
                                     </select>
@@ -306,25 +304,27 @@ export default function InscripcionesPage() {
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <div className="admin-form-actions">
                                 <button type="button" onClick={resetForm} className="btn btn-secondary">
                                     Cancelar
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? 'Guardando...' : '💾 Guardar'}
+                                    {saving ? 'Guardando...' : 'Guardar'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 )}
 
-                <div className="admin-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                        <h3>Participantes ({filteredInscripciones.length})</h3>
+                <div className="admin-form-section">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Participantes ({filteredInscripciones.length})
+                        </span>
                         <select
                             value={filterModalidad}
                             onChange={(e) => setFilterModalidad(e.target.value)}
-                            style={{ padding: '0.5rem', borderRadius: '6px', border: '2px solid #E5E7EB' }}
+                            style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.8125rem' }}
                         >
                             <option value="">Todas las modalidades</option>
                             {modalidades.map(m => (
@@ -334,7 +334,7 @@ export default function InscripcionesPage() {
                     </div>
 
                     {filteredInscripciones.length === 0 ? (
-                        <p style={{ textAlign: 'center', padding: '2rem', color: '#6B7280' }}>
+                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                             No hay inscripciones registradas.
                         </p>
                     ) : (
@@ -363,7 +363,7 @@ export default function InscripcionesPage() {
                                                     rel="noopener noreferrer"
                                                     style={{ color: '#25D366' }}
                                                 >
-                                                    📱 {insc.telefono}
+                                                    {insc.telefono}
                                                 </a>
                                             </td>
                                             <td>
@@ -385,7 +385,7 @@ export default function InscripcionesPage() {
                                                 <span style={{
                                                     padding: '0.25rem 0.5rem',
                                                     background: `${insc.tipos_evento?.color || '#6B7280'}15`,
-                                                    color: insc.tipos_evento?.color || '#6B7280',
+                                                    color: insc.tipos_evento?.color || 'var(--text-muted)',
                                                     borderRadius: '4px',
                                                     fontSize: '0.8rem',
                                                     fontWeight: 500
@@ -393,14 +393,13 @@ export default function InscripcionesPage() {
                                                     {insc.tipos_evento?.nombre || '-'}
                                                 </span>
                                             </td>
-                                            <td style={{ fontSize: '0.85rem', color: '#6B7280' }}>
+                                            <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                                 {insc.eventos?.titulo || 'General'}
                                             </td>
                                             <td>
                                                 <span
                                                     onClick={async () => {
                                                         const supabase = createClient();
-                                                        // Cycle: Pendiente -> Parcial -> Pagado -> Pendiente
                                                         const currentStatus = insc.estado_pago || 'pendiente';
                                                         let newStatus = 'pendiente';
                                                         if (currentStatus === 'pendiente') newStatus = 'parcial';
@@ -413,32 +412,14 @@ export default function InscripcionesPage() {
                                                             .eq('id', insc.id);
                                                         loadInscripciones();
                                                     }}
-                                                    style={{
-                                                        cursor: 'pointer',
-                                                        padding: '0.25rem 0.6rem',
-                                                        borderRadius: '100px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        background:
-                                                            (insc.estado_pago === 'pagado') ? '#DCFCE7' :
-                                                                (insc.estado_pago === 'parcial') ? '#FEF3C7' : '#FEE2E2',
-                                                        color:
-                                                            (insc.estado_pago === 'pagado') ? '#166534' :
-                                                                (insc.estado_pago === 'parcial') ? '#92400E' : '#991B1B',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.25rem',
-                                                        border: `1px solid ${(insc.estado_pago === 'pagado') ? '#BBF7D0' :
-                                                            (insc.estado_pago === 'parcial') ? '#FDE68A' : '#FECACA'
-                                                            }`
-                                                    }}
-                                                    title="Click para cambiar: Pendiente -> Parcial -> Pagado"
+                                                    className={`status-badge status-${insc.estado_pago || 'pendiente'}`}
+                                                    title="Click para cambiar estado"
                                                 >
-                                                    {(insc.estado_pago === 'pagado') ? '✅ PAGADO' :
-                                                        (insc.estado_pago === 'parcial') ? '🟠 PARCIAL' : '⏳ PENDIENTE'}
+                                                    {(insc.estado_pago === 'pagado') ? 'PAGADO' :
+                                                        (insc.estado_pago === 'parcial') ? 'PARCIAL' : 'PENDIENTE'}
                                                 </span>
                                             </td>
-                                            <td style={{ fontWeight: 600, color: '#374151' }}>
+                                            <td style={{ fontWeight: 600 }}>
                                                 Gs. {(insc.monto_pagado || 0).toLocaleString('es-PY')}
                                             </td>
                                             <td>
@@ -448,14 +429,14 @@ export default function InscripcionesPage() {
                                                         className="btn btn-secondary"
                                                         style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
                                                     >
-                                                        ✏️
+                                                        Editar
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(insc.id)}
                                                         className="btn btn-danger"
                                                         style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
                                                     >
-                                                        🗑️
+                                                        Eliminar
                                                     </button>
                                                 </div>
                                             </td>

@@ -26,7 +26,7 @@ export default function PublicReglamentosPage() {
         const { data } = await supabase
             .from('reglamentos')
             .select('*')
-            .order('titulo'); // Alphabetical order for public view often makes more sense
+            .order('titulo');
 
         if (data) {
             setReglamentos(data);
@@ -41,7 +41,7 @@ export default function PublicReglamentosPage() {
                 <div className="admin-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
                     <div className="admin-header" style={{ marginBottom: '3rem', textAlign: 'center', flexDirection: 'column', gap: '1rem' }}>
                         <h2 className="section-title" style={{ fontSize: '2.5rem' }}>Reglamentos y Documentos</h2>
-                        <p style={{ color: '#6B7280', maxWidth: '600px', margin: '0 auto' }}>
+                        <p style={{ color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>
                             Accede a la documentación oficial, reglamentos técnicos y normativas vigentes del Club Paraguayo de Tiro Práctico.
                         </p>
                     </div>
@@ -56,9 +56,8 @@ export default function PublicReglamentosPage() {
                         </div>
                     ) : reglamentos.length === 0 ? (
                         <div className="admin-card" style={{ textAlign: 'center', padding: '4rem' }}>
-                            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📂</div>
                             <h3 style={{ marginBottom: '1rem' }}>No hay documentos disponibles</h3>
-                            <p style={{ color: '#6B7280' }}>Disculpa las molestias, vuelve a revisar pronto.</p>
+                            <p style={{ color: 'var(--text-muted)' }}>Disculpa las molestias, vuelve a revisar pronto.</p>
                         </div>
                     ) : (
                         <div style={{
@@ -73,27 +72,28 @@ export default function PublicReglamentosPage() {
                                     justifyContent: 'space-between',
                                     height: '100%',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
-                                    border: '1px solid rgba(0,0,0,0.05)'
+                                    border: '1px solid var(--border-subtle)'
                                 }}>
                                     <div style={{ marginBottom: '1.5rem' }}>
                                         <div style={{
                                             marginBottom: '1rem',
                                             width: '48px',
                                             height: '48px',
-                                            background: '#EFF6FF',
-                                            color: '#2563EB',
+                                            background: 'rgba(220, 38, 38, 0.1)',
+                                            color: 'var(--color-primary)',
                                             borderRadius: '12px',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontSize: '1.5rem'
+                                            fontSize: '1.25rem',
+                                            fontWeight: 700,
                                         }}>
-                                            📄
+                                            PDF
                                         </div>
                                         <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>
                                             {reg.titulo}
                                         </h3>
-                                        <p style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
+                                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                                             Publicado: {new Date(reg.created_at).toLocaleDateString('es-ES')}
                                         </p>
                                     </div>
@@ -102,22 +102,13 @@ export default function PublicReglamentosPage() {
                                         href={reg.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="btn btn-primary"
+                                        className="btn btn-secondary"
                                         style={{
                                             width: '100%',
                                             justifyContent: 'center',
-                                            background: '#f3f4f6',
-                                            color: '#1f2937',
-                                            border: '1px solid #e5e7eb'
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.background = '#e5e7eb';
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.background = '#f3f4f6';
                                         }}
                                     >
-                                        ⏬ Descargar PDF
+                                        Descargar PDF
                                     </a>
                                 </div>
                             ))}

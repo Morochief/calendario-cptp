@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Header from '@/components/Header';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { createClient } from '@/lib/supabase';
 
 interface ModalidadConContacto {
@@ -69,14 +69,9 @@ export default function ModalidadesPage() {
         };
 
         if (editingId) {
-            await supabase
-                .from('modalidades')
-                .update(modalidadData)
-                .eq('id', editingId);
+            await supabase.from('modalidades').update(modalidadData).eq('id', editingId);
         } else {
-            await supabase
-                .from('modalidades')
-                .insert(modalidadData);
+            await supabase.from('modalidades').insert(modalidadData);
         }
 
         resetForm();
@@ -95,7 +90,6 @@ export default function ModalidadesPage() {
 
     async function handleDelete(id: string) {
         if (!confirm('¿Eliminar esta modalidad? Se eliminarán también todos sus eventos.')) return;
-
         const supabase = createClient();
         await supabase.from('modalidades').delete().eq('id', id);
         loadModalidades();
@@ -115,9 +109,7 @@ export default function ModalidadesPage() {
             <>
                 <Header />
                 <div className="admin-container">
-                    <div className="loading">
-                        <div className="spinner"></div>
-                    </div>
+                    <div className="loading"><div className="spinner"></div></div>
                 </div>
             </>
         );
@@ -127,30 +119,25 @@ export default function ModalidadesPage() {
         <>
             <Header />
             <div className="admin-container">
+                <Breadcrumbs />
                 <div className="admin-header">
                     <div>
                         <h2 className="section-title">Gestión de Modalidades</h2>
-                        <Link href="/admin" style={{ color: '#6B7280', fontSize: '0.875rem' }}>
-                            ← Volver al panel
-                        </Link>
                     </div>
                     {!showForm && (
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="btn btn-primary"
-                        >
-                            ➕ Nueva Modalidad
+                        <button onClick={() => setShowForm(true)} className="btn btn-primary">
+                            Nueva Modalidad
                         </button>
                     )}
                 </div>
 
                 {showForm && (
-                    <div className="admin-card" style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>
+                    <div className="admin-form-section" style={{ marginBottom: '1.5rem' }}>
+                        <div className="admin-form-section-header">
                             {editingId ? 'Editar Modalidad' : 'Nueva Modalidad'}
-                        </h3>
+                        </div>
                         <form onSubmit={handleSubmit}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'end' }}>
+                            <div className="admin-form-row" style={{ gridTemplateColumns: '1fr auto', alignItems: 'end' }}>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                     <label htmlFor="nombre">Nombre de la modalidad *</label>
                                     <input
@@ -174,9 +161,9 @@ export default function ModalidadesPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                            <div className="admin-form-row" style={{ marginTop: '1rem' }}>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label htmlFor="contactoNombre">👤 Contacto / Responsable</label>
+                                    <label htmlFor="contactoNombre">Contacto / Responsable</label>
                                     <input
                                         id="contactoNombre"
                                         type="text"
@@ -186,7 +173,7 @@ export default function ModalidadesPage() {
                                     />
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label htmlFor="contactoTelefono">📱 Teléfono de contacto</label>
+                                    <label htmlFor="contactoTelefono">Teléfono de contacto</label>
                                     <input
                                         id="contactoTelefono"
                                         type="tel"
@@ -197,26 +184,26 @@ export default function ModalidadesPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                            <div className="admin-form-actions">
                                 <button type="button" onClick={resetForm} className="btn btn-secondary">
                                     Cancelar
                                 </button>
                                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                                    {saving ? 'Guardando...' : '💾 Guardar'}
+                                    {saving ? 'Guardando...' : 'Guardar'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 )}
 
-                <div className="admin-card">
-                    <h3 style={{ marginBottom: '1.5rem' }}>
+                <div className="admin-form-section">
+                    <div className="admin-form-section-header">
                         Modalidades ({modalidades.length})
-                    </h3>
+                    </div>
 
                     {modalidades.length === 0 ? (
-                        <p style={{ textAlign: 'center', padding: '2rem', color: '#6B7280' }}>
-                            No hay modalidades. ¡Crea la primera!
+                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                            No hay modalidades. Crea la primera.
                         </p>
                     ) : (
                         <div className="admin-table-wrapper">
@@ -253,12 +240,12 @@ export default function ModalidadesPage() {
                                                                 rel="noopener noreferrer"
                                                                 style={{ color: '#25D366', fontSize: '0.85rem' }}
                                                             >
-                                                                📱 {mod.contacto_telefono}
+                                                                {mod.contacto_telefono}
                                                             </a>
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span style={{ color: '#9CA3AF' }}>Sin contacto</span>
+                                                    <span style={{ color: 'var(--text-muted)' }}>Sin contacto</span>
                                                 )}
                                             </td>
                                             <td>
@@ -268,14 +255,14 @@ export default function ModalidadesPage() {
                                                         className="btn btn-secondary"
                                                         style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
                                                     >
-                                                        ✏️ Editar
+                                                        Editar
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(mod.id)}
                                                         className="btn btn-danger"
                                                         style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
                                                     >
-                                                        🗑️
+                                                        Eliminar
                                                     </button>
                                                 </div>
                                             </td>
