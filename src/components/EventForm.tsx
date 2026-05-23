@@ -110,13 +110,21 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
         if (imagenFile) {
             setUploadingImage(true);
             try {
-                const fileExt = imagenFile.name.split('.').pop();
+                // Compress image to JPEG blob using canvas
+                const compressedBlob = await compressImage(imagenFile);
+                const fileToUpload = new File(
+                    [compressedBlob], 
+                    imagenFile.name.substring(0, imagenFile.name.lastIndexOf('.')) + '.jpg', 
+                    { type: 'image/jpeg' }
+                );
+
+                const fileExt = 'jpg';
                 const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
                 const filePath = `${fileName}`;
 
                 const { error: uploadError, data } = await supabase.storage
                     .from('event-images')
-                    .upload(filePath, imagenFile);
+                    .upload(filePath, fileToUpload);
 
                 if (uploadError) {
                     console.error('Error uploading image:', uploadError);
@@ -364,4 +372,44 @@ export default function EventForm({ initialData, isEditing = false }: EventFormP
             </div>
         </form>
     );
+}
+
+/**
+ * Compresses and resizes an image file using HTML5 Canvas
+ * Reduces file size dramatically before uploading to Supabase
+ */
+async function compressImage(file: File, maxWidth = 1200, quality = 0.85): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new window.Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('Fallo al comprimir la imagen'));
+                    },
+                    'image/jpeg',
+                    quality
+                );
+            };
+        };
+        reader.onerror = (err) => reject(err);
+    });
 }
