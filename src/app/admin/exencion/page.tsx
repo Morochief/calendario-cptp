@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabase';
-import { Exencion } from '@/lib/types';
+import { Exencion, Evento } from '@/lib/types';
 
 export default function ExencionPage() {
     const router = useRouter();
     const { showToast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const quickUploadInputRef = useRef<HTMLInputElement>(null);
 
     const today = new Date();
     const meses = [
@@ -19,6 +21,8 @@ export default function ExencionPage() {
     ];
 
     const initialFormData = {
+        eventoId: '',
+        fotoUrl: '',
         nombre: '',
         apellido: '',
         nroSocio: '',
@@ -36,13 +40,25 @@ export default function ExencionPage() {
     };
 
     const [formData, setFormData] = useState(initialFormData);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [exenciones, setExenciones] = useState<Exencion[]>([]);
+    const [eventos, setEventos] = useState<Evento[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploadingQuick, setUploadingQuick] = useState<string | null>(null);
     const [adminUser, setAdminUser] = useState<string | null>(null);
+    
+    // Filtros de historial
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterEventoId, setFilterEventoId] = useState<string>('todos');
     const [activeTab, setActiveTab] = useState<'form' | 'history'>('form');
+
+    // Modal para ver foto firmada
+    const [modalPhoto, setModalPhoto] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
+    const [targetExencionForQuickUpload, setTargetExencionForQuickUpload] = useState<string | null>(null);
 
     useEffect(() => {
         checkAuthAndLoad();
@@ -58,15 +74,41 @@ export default function ExencionPage() {
         }
 
         setAdminUser(user.email || user.id);
-        await loadExenciones();
+        await Promise.all([loadExenciones(), loadEventos()]);
         setLoading(false);
+    }
+
+    async function loadEventos() {
+        const supabase = createClient();
+        const { data } = await supabase
+            .from('eventos')
+            .select(`
+                *,
+                modalidades (*)
+            `)
+            .order('fecha', { ascending: false });
+
+        if (data) {
+            setEventos(data as Evento[]);
+        }
     }
 
     async function loadExenciones() {
         const supabase = createClient();
         const { data, error } = await supabase
             .from('exenciones')
-            .select('*')
+            .select(`
+                *,
+                eventos (
+                    id,
+                    titulo,
+                    fecha,
+                    modalidades (
+                        nombre,
+                        color
+                    )
+                )
+            `)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -76,13 +118,35 @@ export default function ExencionPage() {
         }
     }
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedFile(file);
+            const objectUrl = URL.createObjectURL(file);
+            setLocalPreviewUrl(objectUrl);
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setSelectedFile(null);
+        if (localPreviewUrl) {
+            URL.revokeObjectURL(localPreviewUrl);
+            setLocalPreviewUrl(null);
+        }
+        setFormData(prev => ({ ...prev, fotoUrl: '' }));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleReset = () => {
         setSelectedId(null);
+        handleRemoveFile();
         setFormData({
             ...initialFormData,
             dia: new Date().getDate().toString(),
@@ -90,6 +154,45 @@ export default function ExencionPage() {
             anho: new Date().getFullYear().toString(),
         });
     };
+
+    // Subir imagen a Supabase Storage bucket 'exenciones'
+    async function uploadImageToStorage(file: File, prefix = 'firmada'): Promise<string | null> {
+        const supabase = createClient();
+        const fileExt = file.name.split('.').pop() || 'jpg';
+        const fileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('exenciones')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            console.error('Error al subir a storage exenciones:', uploadError);
+            // Intentar con bucket 'event-images' si 'exenciones' no estuviera creado aún
+            const { error: fallbackError } = await supabase.storage
+                .from('event-images')
+                .upload(filePath, file);
+
+            if (fallbackError) {
+                throw new Error(`Error al subir imagen: ${uploadError.message}. Verifica que el bucket 'exenciones' esté creado en Supabase.`);
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('event-images')
+                .getPublicUrl(filePath);
+
+            return publicUrl;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('exenciones')
+            .getPublicUrl(filePath);
+
+        return publicUrl;
+    }
 
     const handleSave = async (andPrint = false) => {
         if (!formData.nombre.trim() || !formData.apellido.trim()) {
@@ -100,25 +203,37 @@ export default function ExencionPage() {
         setSaving(true);
         const supabase = createClient();
 
-        const payload = {
-            nombre: formData.nombre.trim(),
-            apellido: formData.apellido.trim(),
-            nro_socio: formData.nroSocio.trim() || null,
-            profesion: formData.profesion.trim() || null,
-            ci: formData.ci.trim() || null,
-            fecha_nacimiento: formData.fechaNacimiento.trim() || null,
-            direccion: formData.direccion.trim() || null,
-            telefono: formData.telefono.trim() || null,
-            celular: formData.celular.trim() || null,
-            email: formData.email.trim() || null,
-            ciudad: formData.ciudad.trim() || 'Asunción',
-            dia: formData.dia.trim() || null,
-            mes: formData.mes.trim() || null,
-            anho: formData.anho.trim() || null,
-            admin_user: adminUser,
-        };
-
         try {
+            let finalFotoUrl = formData.fotoUrl;
+
+            // Si hay un archivo nuevo seleccionado para subir
+            if (selectedFile) {
+                const uploadedUrl = await uploadImageToStorage(selectedFile, `${formData.nombre}_${formData.apellido}`);
+                if (uploadedUrl) {
+                    finalFotoUrl = uploadedUrl;
+                }
+            }
+
+            const payload = {
+                evento_id: formData.eventoId ? formData.eventoId : null,
+                foto_url: finalFotoUrl || null,
+                nombre: formData.nombre.trim(),
+                apellido: formData.apellido.trim(),
+                nro_socio: formData.nroSocio.trim() || null,
+                profesion: formData.profesion.trim() || null,
+                ci: formData.ci.trim() || null,
+                fecha_nacimiento: formData.fechaNacimiento.trim() || null,
+                direccion: formData.direccion.trim() || null,
+                telefono: formData.telefono.trim() || null,
+                celular: formData.celular.trim() || null,
+                email: formData.email.trim() || null,
+                ciudad: formData.ciudad.trim() || 'Asunción',
+                dia: formData.dia.trim() || null,
+                mes: formData.mes.trim() || null,
+                anho: formData.anho.trim() || null,
+                admin_user: adminUser,
+            };
+
             if (selectedId) {
                 const { error } = await supabase
                     .from('exenciones')
@@ -126,7 +241,7 @@ export default function ExencionPage() {
                     .eq('id', selectedId);
 
                 if (error) throw error;
-                showToast('Exención actualizada exitosamente', 'success');
+                showToast('Exención actualizada exitosamente con foto y evento', 'success');
             } else {
                 const { data, error } = await supabase
                     .from('exenciones')
@@ -141,6 +256,9 @@ export default function ExencionPage() {
                 showToast('Exención guardada en la base de datos', 'success');
             }
 
+            // Actualizar state
+            setFormData(prev => ({ ...prev, fotoUrl: finalFotoUrl }));
+            setSelectedFile(null);
             await loadExenciones();
 
             if (andPrint) {
@@ -150,7 +268,7 @@ export default function ExencionPage() {
             }
         } catch (error: any) {
             console.error('Error al guardar exención:', error);
-            showToast(`Error al guardar: ${error.message || 'Verifica la conexión o la tabla en Supabase'}`, 'error');
+            showToast(`Error: ${error.message || 'Verifica la base de datos'}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -158,7 +276,11 @@ export default function ExencionPage() {
 
     const handleSelectExencion = (item: Exencion) => {
         setSelectedId(item.id);
+        setSelectedFile(null);
+        setLocalPreviewUrl(null);
         setFormData({
+            eventoId: item.evento_id || '',
+            fotoUrl: item.foto_url || '',
             nombre: item.nombre || '',
             apellido: item.apellido || '',
             nroSocio: item.nro_socio || '',
@@ -175,12 +297,14 @@ export default function ExencionPage() {
             anho: item.anho || '',
         });
         setActiveTab('form');
-        showToast(`Datos de ${item.nombre} ${item.apellido} cargados en el formulario`, 'info');
+        showToast(`Datos de ${item.nombre} ${item.apellido} cargados`, 'info');
     };
 
     const handleDirectPrint = (item: Exencion) => {
         setSelectedId(item.id);
         setFormData({
+            eventoId: item.evento_id || '',
+            fotoUrl: item.foto_url || '',
             nombre: item.nombre || '',
             apellido: item.apellido || '',
             nroSocio: item.nro_socio || '',
@@ -199,6 +323,47 @@ export default function ExencionPage() {
         setTimeout(() => {
             window.print();
         }, 150);
+    };
+
+    // Subida rápida de foto desde la tabla para registros existentes
+    const triggerQuickUpload = (exencionId: string) => {
+        setTargetExencionForQuickUpload(exencionId);
+        if (quickUploadInputRef.current) {
+            quickUploadInputRef.current.value = '';
+            quickUploadInputRef.current.click();
+        }
+    };
+
+    const handleQuickFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || !e.target.files[0] || !targetExencionForQuickUpload) return;
+        const file = e.target.files[0];
+        const exencionId = targetExencionForQuickUpload;
+
+        setUploadingQuick(exencionId);
+        try {
+            const exencionItem = exenciones.find(x => x.id === exencionId);
+            const prefix = exencionItem ? `${exencionItem.nombre}_${exencionItem.apellido}` : 'exencion';
+            const publicUrl = await uploadImageToStorage(file, prefix);
+
+            if (!publicUrl) throw new Error('No se pudo obtener la URL de la imagen');
+
+            const supabase = createClient();
+            const { error } = await supabase
+                .from('exenciones')
+                .update({ foto_url: publicUrl })
+                .eq('id', exencionId);
+
+            if (error) throw error;
+
+            showToast('Foto firmada adjuntada correctamente al registro', 'success');
+            await loadExenciones();
+        } catch (err: any) {
+            console.error('Error en subida rápida:', err);
+            showToast(`Error al subir: ${err.message}`, 'error');
+        } finally {
+            setUploadingQuick(null);
+            setTargetExencionForQuickUpload(null);
+        }
     };
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -222,25 +387,52 @@ export default function ExencionPage() {
     };
 
     const filteredExenciones = useMemo(() => {
-        if (!searchTerm.trim()) return exenciones;
-        const q = searchTerm.toLowerCase();
-        return exenciones.filter(e =>
-            e.nombre.toLowerCase().includes(q) ||
-            e.apellido.toLowerCase().includes(q) ||
-            (e.ci && e.ci.toLowerCase().includes(q)) ||
-            (e.nro_socio && e.nro_socio.toLowerCase().includes(q)) ||
-            (e.admin_user && e.admin_user.toLowerCase().includes(q))
-        );
-    }, [exenciones, searchTerm]);
+        let result = exenciones;
+
+        // Filtro por evento
+        if (filterEventoId !== 'todos') {
+            if (filterEventoId === 'sin_evento') {
+                result = result.filter(e => !e.evento_id);
+            } else {
+                result = result.filter(e => e.evento_id === filterEventoId);
+            }
+        }
+
+        // Filtro por texto
+        if (searchTerm.trim()) {
+            const q = searchTerm.toLowerCase();
+            result = result.filter(e =>
+                e.nombre.toLowerCase().includes(q) ||
+                e.apellido.toLowerCase().includes(q) ||
+                (e.ci && e.ci.toLowerCase().includes(q)) ||
+                (e.nro_socio && e.nro_socio.toLowerCase().includes(q)) ||
+                (e.admin_user && e.admin_user.toLowerCase().includes(q)) ||
+                (e.eventos?.titulo && e.eventos.titulo.toLowerCase().includes(q))
+            );
+        }
+
+        return result;
+    }, [exenciones, searchTerm, filterEventoId]);
 
     const nombreCompleto = `${formData.nombre} ${formData.apellido}`.trim();
+    const currentEvent = eventos.find(ev => ev.id === formData.eventoId);
+    const displayFotoUrl = localPreviewUrl || formData.fotoUrl;
 
     return (
         <>
+            {/* Input oculto para subida rápida desde la tabla */}
+            <input
+                type="file"
+                ref={quickUploadInputRef}
+                accept="image/*,application/pdf"
+                style={{ display: 'none' }}
+                onChange={handleQuickFileSelected}
+            />
+
             {/* Header y UI visible en pantalla pero oculto al imprimir */}
             <div className="print:hidden">
                 <Header />
-                <main className="admin-container" id="main-content" style={{ maxWidth: '1300px', margin: '0 auto', padding: '1.5rem 1rem' }}>
+                <main className="admin-container" id="main-content" style={{ maxWidth: '1350px', margin: '0 auto', padding: '1.5rem 1rem' }}>
                     <Breadcrumbs />
 
                     <div style={{
@@ -253,10 +445,10 @@ export default function ExencionPage() {
                     }}>
                         <div>
                             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                                Exención de Responsabilidad
+                                Exención de Responsabilidad y Auditoría
                             </h1>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
-                                Carga de datos, guardado histórico en Supabase e impresión oficial.
+                                Carga de tiradores, vinculación a eventos, adjuntos de hojas firmadas e impresión oficial.
                             </p>
                         </div>
 
@@ -294,7 +486,7 @@ export default function ExencionPage() {
                                     <polyline points="17 21 17 13 7 13 7 21" />
                                     <polyline points="7 3 7 8 15 8" />
                                 </svg>
-                                {saving ? 'Guardando...' : (selectedId ? 'Actualizar Registro' : 'Solo Guardar')}
+                                {saving ? 'Guardando...' : (selectedId ? 'Actualizar Registro' : 'Guardar Datos & Foto')}
                             </button>
 
                             <button
@@ -354,7 +546,7 @@ export default function ExencionPage() {
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
-                            Formulario y Vista Previa {selectedId && <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: '4px' }}>Editando</span>}
+                            Formulario y Adjunto {selectedId && <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: '4px' }}>Editando #{selectedId.substring(0, 6)}</span>}
                         </button>
 
                         <button
@@ -380,15 +572,15 @@ export default function ExencionPage() {
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
                             </svg>
-                            Historial Guardado ({exenciones.length})
+                            Historial & Auditoría ({exenciones.length})
                         </button>
                     </div>
 
-                    {/* VISTA 1: FORMULARIO Y VISTA PREVIA */}
+                    {/* VISTA 1: FORMULARIO, ADJUNTO DE FOTO Y VISTA PREVIA */}
                     {activeTab === 'form' && (
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
                             gap: '2rem',
                             alignItems: 'start'
                         }}>
@@ -402,7 +594,7 @@ export default function ExencionPage() {
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                                     <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                                        Datos del Tirador / Socio
+                                        Carga de Exención
                                     </h2>
                                     {adminUser && (
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -411,7 +603,136 @@ export default function ExencionPage() {
                                     )}
                                 </div>
 
-                                <form onSubmit={(e) => { e.preventDefault(); handleSave(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleSave(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                                    
+                                    {/* SECCIÓN VINCULAR A EVENTO */}
+                                    <div style={{
+                                        background: '#f8fafc',
+                                        border: '1px solid #cbd5e1',
+                                        borderRadius: '0.5rem',
+                                        padding: '0.85rem'
+                                    }}>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.35rem' }}>
+                                            🎯 Vincular a un Evento / Competencia (Opcional)
+                                        </label>
+                                        <select
+                                            name="eventoId"
+                                            value={formData.eventoId}
+                                            onChange={handleChange}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.55rem 0.75rem',
+                                                borderRadius: '0.375rem',
+                                                border: '1px solid #94a3b8',
+                                                fontSize: '0.9rem',
+                                                backgroundColor: '#ffffff'
+                                            }}
+                                        >
+                                            <option value="">-- Sin evento vinculado (Práctica Libre / General) --</option>
+                                            {eventos.map(ev => (
+                                                <option key={ev.id} value={ev.id}>
+                                                    {ev.fecha} | {ev.titulo} {ev.modalidades?.nombre ? `(${ev.modalidades.nombre})` : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* SECCIÓN ADJUNTAR FOTO DE LA HOJA FIRMADA */}
+                                    <div style={{
+                                        background: '#fdf2f2',
+                                        border: '1px dashed #f87171',
+                                        borderRadius: '0.5rem',
+                                        padding: '0.85rem'
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#991b1b', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                📷 Foto o Escaneo de la Hoja Firmada (Auditoría)
+                                            </label>
+                                            {displayFotoUrl && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveFile}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#dc2626',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        cursor: 'pointer',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    Quitar foto
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <p style={{ fontSize: '0.75rem', color: '#7f1d1d', margin: '0 0 0.5rem 0' }}>
+                                            Sube una foto tomada con el celular o escaneo del documento con la firma del tirador.
+                                        </p>
+
+                                        {displayFotoUrl ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#ffffff', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #fecaca' }}>
+                                                <img 
+                                                    src={displayFotoUrl} 
+                                                    alt="Vista previa hoja firmada" 
+                                                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '0.25rem', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+                                                    onClick={() => setModalPhoto({ url: displayFotoUrl, title: `Hoja firmada: ${nombreCompleto || 'Tirador'}` })}
+                                                />
+                                                <div style={{ flex: 1 }}>
+                                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#15803d', display: 'block' }}>
+                                                        ✓ Documento adjunto cargado
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setModalPhoto({ url: displayFotoUrl, title: `Hoja firmada: ${nombreCompleto || 'Tirador'}` })}
+                                                        style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.75rem', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
+                                                    >
+                                                        Ver foto en grande
+                                                    </button>
+                                                </div>
+                                                <label style={{ cursor: 'pointer', fontSize: '0.75rem', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '0.25rem' }}>
+                                                    Cambiar
+                                                    <input
+                                                        type="file"
+                                                        ref={fileInputRef}
+                                                        accept="image/*,application/pdf"
+                                                        onChange={handleFileChange}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                </label>
+                                            </div>
+                                        ) : (
+                                            <label style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: '#ffffff',
+                                                border: '1px dashed #cbd5e1',
+                                                borderRadius: '0.375rem',
+                                                padding: '1rem',
+                                                cursor: 'pointer'
+                                            }}>
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                                    <circle cx="12" cy="13" r="4" />
+                                                </svg>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginTop: '0.25rem' }}>
+                                                    Seleccionar foto / Tomar foto
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    ref={fileInputRef}
+                                                    accept="image/*,application/pdf"
+                                                    onChange={handleFileChange}
+                                                    style={{ display: 'none' }}
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
+
+                                    {/* DATOS PERSONALES */}
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                                         <div>
                                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
@@ -628,6 +949,20 @@ export default function ExencionPage() {
                                         </span>
                                     </div>
 
+                                    {currentEvent && (
+                                        <div style={{
+                                            marginBottom: '0.75rem',
+                                            padding: '0.4rem 0.75rem',
+                                            background: '#eff6ff',
+                                            border: '1px solid #bfdbfe',
+                                            borderRadius: '0.375rem',
+                                            fontSize: '0.8rem',
+                                            color: '#1e40af'
+                                        }}>
+                                            Evento: <strong>{currentEvent.titulo}</strong> ({currentEvent.fecha})
+                                        </div>
+                                    )}
+
                                     <div style={{
                                         background: '#ffffff',
                                         color: '#000000',
@@ -701,7 +1036,7 @@ export default function ExencionPage() {
                         </div>
                     )}
 
-                    {/* VISTA 2: HISTORIAL REGISTRADO EN SUPABASE */}
+                    {/* VISTA 2: HISTORIAL REGISTRADO EN SUPABASE & AUDITORIA */}
                     {activeTab === 'history' && (
                         <div style={{
                             background: 'var(--bg-elevated, #ffffff)',
@@ -720,25 +1055,47 @@ export default function ExencionPage() {
                             }}>
                                 <div>
                                     <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                                        Registro Histórico de Exenciones
+                                        Auditoría y Registro Histórico de Exenciones
                                     </h2>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
-                                        Total de registros en base de datos: {exenciones.length}
+                                        Total de registros: <strong>{exenciones.length}</strong> {filteredExenciones.length !== exenciones.length && `(Filtrados: ${filteredExenciones.length})`}
                                     </p>
                                 </div>
 
-                                <div style={{ minWidth: '280px' }}>
+                                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                    {/* Filtro por evento */}
+                                    <select
+                                        value={filterEventoId}
+                                        onChange={(e) => setFilterEventoId(e.target.value)}
+                                        style={{
+                                            padding: '0.5rem 0.75rem',
+                                            borderRadius: '0.375rem',
+                                            border: '1px solid var(--border-subtle, #d1d5db)',
+                                            fontSize: '0.85rem',
+                                            backgroundColor: 'var(--bg-card)'
+                                        }}
+                                    >
+                                        <option value="todos">Todos los eventos</option>
+                                        <option value="sin_evento">Sin evento asignado</option>
+                                        {eventos.map(ev => (
+                                            <option key={ev.id} value={ev.id}>
+                                                {ev.fecha} - {ev.titulo}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {/* Buscador */}
                                     <input
                                         type="text"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Buscar por nombre, CI, socio..."
+                                        placeholder="Buscar por tirador, CI, socio, evento..."
                                         style={{
-                                            width: '100%',
+                                            minWidth: '260px',
                                             padding: '0.5rem 0.75rem',
                                             borderRadius: '0.375rem',
                                             border: '1px solid var(--border-subtle, #d1d5db)',
-                                            fontSize: '0.9rem'
+                                            fontSize: '0.85rem'
                                         }}
                                     />
                                 </div>
@@ -752,112 +1109,194 @@ export default function ExencionPage() {
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                         <polyline points="14 2 14 8 20 8" />
                                     </svg>
-                                    <p style={{ margin: 0, fontWeight: 600 }}>No se encontraron registros de exenciones</p>
-                                    <p style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>Completa el formulario y guarda para crear el primer registro histórico.</p>
+                                    <p style={{ margin: 0, fontWeight: 600 }}>No se encontraron registros</p>
+                                    <p style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>Prueba cambiando el filtro de evento o el término de búsqueda.</p>
                                 </div>
                             ) : (
                                 <div style={{ overflowX: 'auto' }}>
-                                    <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                    <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                                         <thead>
                                             <tr style={{ borderBottom: '2px solid var(--border-subtle, #e5e7eb)', textAlign: 'left' }}>
                                                 <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>Fecha Registro</th>
                                                 <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>Tirador / Socio</th>
                                                 <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>C.I.</th>
-                                                <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>Nº Socio</th>
-                                                <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>Contacto</th>
+                                                <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>Evento Vinculado</th>
+                                                <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>Hoja Firmada (Auditoría)</th>
                                                 <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)' }}>Cargado por</th>
                                                 <th style={{ padding: '0.75rem 0.5rem', color: 'var(--text-muted)', textAlign: 'right' }}>Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {filteredExenciones.map((item) => (
-                                                <tr 
-                                                    key={item.id} 
-                                                    style={{ 
-                                                        borderBottom: '1px solid var(--border-subtle, #f3f4f6)',
-                                                        cursor: 'pointer',
-                                                        backgroundColor: selectedId === item.id ? 'rgba(220, 38, 38, 0.05)' : undefined
-                                                    }}
-                                                    onClick={() => handleSelectExencion(item)}
-                                                >
-                                                    <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
-                                                        {new Date(item.created_at).toLocaleDateString('es-PY', {
-                                                            year: 'numeric',
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </td>
-                                                    <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>
-                                                        {item.nombre} {item.apellido}
-                                                    </td>
-                                                    <td style={{ padding: '0.75rem 0.5rem' }}>
-                                                        {item.ci || '-'}
-                                                    </td>
-                                                    <td style={{ padding: '0.75rem 0.5rem' }}>
-                                                        {item.nro_socio || '-'}
-                                                    </td>
-                                                    <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}>
-                                                        {item.celular || item.telefono || item.email || '-'}
-                                                    </td>
-                                                    <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        {item.admin_user || 'Admin'}
-                                                    </td>
-                                                    <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                                            <button
-                                                                type="button"
-                                                                title="Editar / Ver"
-                                                                onClick={(e) => { e.stopPropagation(); handleSelectExencion(item); }}
-                                                                style={{
-                                                                    background: '#f3f4f6',
-                                                                    border: 'none',
-                                                                    padding: '0.35rem 0.6rem',
-                                                                    borderRadius: '0.25rem',
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '0.8rem'
-                                                                }}
-                                                            >
-                                                                Editar
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                title="Imprimir"
-                                                                onClick={(e) => { e.stopPropagation(); handleDirectPrint(item); }}
-                                                                style={{
-                                                                    background: '#fee2e2',
-                                                                    color: '#dc2626',
-                                                                    border: 'none',
-                                                                    padding: '0.35rem 0.6rem',
-                                                                    borderRadius: '0.25rem',
-                                                                    cursor: 'pointer',
-                                                                    fontWeight: 600,
-                                                                    fontSize: '0.8rem'
-                                                                }}
-                                                            >
-                                                                Imprimir
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                title="Eliminar"
-                                                                onClick={(e) => handleDelete(item.id, e)}
-                                                                style={{
-                                                                    background: '#fee2e2',
-                                                                    color: '#991b1b',
-                                                                    border: 'none',
-                                                                    padding: '0.35rem 0.6rem',
-                                                                    borderRadius: '0.25rem',
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '0.8rem'
-                                                                }}
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {filteredExenciones.map((item) => {
+                                                const eventInfo = item.eventos;
+                                                return (
+                                                    <tr 
+                                                        key={item.id} 
+                                                        style={{ 
+                                                            borderBottom: '1px solid var(--border-subtle, #f3f4f6)',
+                                                            backgroundColor: selectedId === item.id ? 'rgba(220, 38, 38, 0.05)' : undefined
+                                                        }}
+                                                    >
+                                                        <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                                                            {new Date(item.created_at).toLocaleDateString('es-PY', {
+                                                                year: 'numeric',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem 0.5rem' }}>
+                                                            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                                {item.nombre} {item.apellido}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                {item.nro_socio ? `Socio #${item.nro_socio}` : 'No socio'} | {item.celular || item.telefono || '-'}
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>
+                                                            {item.ci || '-'}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem 0.5rem' }}>
+                                                            {eventInfo ? (
+                                                                <div>
+                                                                    <span style={{
+                                                                        display: 'inline-block',
+                                                                        padding: '0.2rem 0.5rem',
+                                                                        borderRadius: '0.25rem',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        backgroundColor: '#eff6ff',
+                                                                        color: '#1d4ed8',
+                                                                        border: '1px solid #bfdbfe'
+                                                                    }}>
+                                                                        {eventInfo.titulo}
+                                                                    </span>
+                                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                                        {eventInfo.fecha}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                                                    General / Libre
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem 0.5rem' }}>
+                                                            {item.foto_url ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setModalPhoto({
+                                                                        url: item.foto_url!,
+                                                                        title: `Hoja Firmada: ${item.nombre} ${item.apellido}`,
+                                                                        subtitle: eventInfo ? `Evento: ${eventInfo.titulo} (${eventInfo.fecha})` : 'Práctica libre'
+                                                                    })}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.35rem',
+                                                                        padding: '0.3rem 0.6rem',
+                                                                        borderRadius: '0.375rem',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        backgroundColor: '#ecfdf5',
+                                                                        color: '#047857',
+                                                                        border: '1px solid #a7f3d0',
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                                                        <circle cx="12" cy="13" r="4" />
+                                                                    </svg>
+                                                                    Ver Foto Firmada
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={uploadingQuick === item.id}
+                                                                    onClick={() => triggerQuickUpload(item.id)}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.35rem',
+                                                                        padding: '0.3rem 0.6rem',
+                                                                        borderRadius: '0.375rem',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: 600,
+                                                                        backgroundColor: '#fef2f2',
+                                                                        color: '#b91c1c',
+                                                                        border: '1px dashed #f87171',
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                                        <polyline points="17 8 12 3 7 8" />
+                                                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                                                    </svg>
+                                                                    {uploadingQuick === item.id ? 'Subiendo...' : '+ Adjuntar Foto'}
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem 0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            {item.admin_user || 'Admin'}
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
+                                                            <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Editar / Cargar al Formulario"
+                                                                    onClick={() => handleSelectExencion(item)}
+                                                                    style={{
+                                                                        background: '#f3f4f6',
+                                                                        border: 'none',
+                                                                        padding: '0.35rem 0.55rem',
+                                                                        borderRadius: '0.25rem',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '0.8rem'
+                                                                    }}
+                                                                >
+                                                                    Editar
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Imprimir formato A4"
+                                                                    onClick={() => handleDirectPrint(item)}
+                                                                    style={{
+                                                                        background: '#fee2e2',
+                                                                        color: '#dc2626',
+                                                                        border: 'none',
+                                                                        padding: '0.35rem 0.55rem',
+                                                                        borderRadius: '0.25rem',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: 600,
+                                                                        fontSize: '0.8rem'
+                                                                    }}
+                                                                >
+                                                                    Imprimir
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    title="Eliminar"
+                                                                    onClick={(e) => handleDelete(item.id, e)}
+                                                                    style={{
+                                                                        background: '#fee2e2',
+                                                                        color: '#991b1b',
+                                                                        border: 'none',
+                                                                        padding: '0.35rem 0.55rem',
+                                                                        borderRadius: '0.25rem',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '0.8rem'
+                                                                    }}
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -866,6 +1305,99 @@ export default function ExencionPage() {
                     )}
                 </main>
             </div>
+
+            {/* MODAL PARA VER FOTO FIRMADA EN ALTA RESOLUCIÓN */}
+            {modalPhoto && (
+                <div 
+                    className="print:hidden"
+                    onClick={() => setModalPhoto(null)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        zIndex: 99999,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1rem'
+                    }}
+                >
+                    <div 
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            backgroundColor: '#ffffff',
+                            borderRadius: '0.75rem',
+                            maxWidth: '900px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+                        }}
+                    >
+                        <div style={{
+                            padding: '1rem 1.25rem',
+                            borderBottom: '1px solid #e2e8f0',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
+                                    {modalPhoto.title}
+                                </h3>
+                                {modalPhoto.subtitle && (
+                                    <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                                        {modalPhoto.subtitle}
+                                    </p>
+                                )}
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <a 
+                                    href={modalPhoto.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="btn btn-outline"
+                                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                                >
+                                    Abrir original ↗
+                                </a>
+                                <button
+                                    type="button"
+                                    onClick={() => setModalPhoto(null)}
+                                    style={{
+                                        background: '#f1f5f9',
+                                        border: 'none',
+                                        borderRadius: '0.375rem',
+                                        width: '32px',
+                                        height: '32px',
+                                        fontSize: '1.2rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style={{ padding: '1rem', overflowY: 'auto', display: 'flex', justifyContent: 'center', backgroundColor: '#0f172a' }}>
+                            <img 
+                                src={modalPhoto.url} 
+                                alt={modalPhoto.title} 
+                                style={{ maxWidth: '100%', maxHeight: '72vh', objectFit: 'contain', borderRadius: '0.25rem' }} 
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* SECCIÓN EXCLUSIVA PARA IMPRESIÓN (A4) */}
             <div className="hidden print:block exencion-print-document" style={{

@@ -84,6 +84,8 @@ export const TIPOS_EVENTO_INICIALES = [
 
 export type Exencion = {
     id: string;
+    evento_id?: string | null;
+    foto_url?: string | null;
     nombre: string;
     apellido: string;
     nro_socio?: string | null;
@@ -100,5 +102,6 @@ export type Exencion = {
     anho?: string | null;
     admin_user?: string | null;
     created_at: string;
+    eventos?: Evento;
 };
 
