@@ -46,6 +46,8 @@ export default function ExencionPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [exenciones, setExenciones] = useState<Exencion[]>([]);
     const [eventos, setEventos] = useState<Evento[]>([]);
+    const [tiradores, setTiradores] = useState<any[]>([]);
+    const [selectedTiradorDropdown, setSelectedTiradorDropdown] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploadingQuick, setUploadingQuick] = useState<string | null>(null);
@@ -74,8 +76,22 @@ export default function ExencionPage() {
         }
 
         setAdminUser(user.email || user.id);
-        await Promise.all([loadExenciones(), loadEventos()]);
+        await Promise.all([loadExenciones(), loadEventos(), loadTiradores()]);
         setLoading(false);
+    }
+
+    async function loadTiradores() {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from('tiradores')
+            .select('*')
+            .order('nombre', { ascending: true });
+
+        if (error) {
+            console.warn('Tabla tiradores no disponible o vacía:', error);
+        } else if (data) {
+            setTiradores(data);
+        }
     }
 
     async function loadEventos() {
@@ -146,6 +162,7 @@ export default function ExencionPage() {
 
     const handleReset = () => {
         setSelectedId(null);
+        setSelectedTiradorDropdown('');
         handleRemoveFile();
         setFormData({
             ...initialFormData,
@@ -153,6 +170,36 @@ export default function ExencionPage() {
             mes: meses[new Date().getMonth()],
             anho: new Date().getFullYear().toString(),
         });
+    };
+
+    const handleSelectTiradorFromDropdown = (tiradorId: string) => {
+        setSelectedTiradorDropdown(tiradorId);
+        if (!tiradorId) return;
+
+        const t = tiradores.find(x => x.id === tiradorId);
+        if (!t) return;
+
+        setFormData(prev => ({
+            ...prev,
+            nombre: t.nombre || '',
+            apellido: t.apellido || '',
+            nroSocio: t.nro_socio || '',
+            profesion: t.profesion || '',
+            ci: t.ci || '',
+            fechaNacimiento: t.fecha_nacimiento || '',
+            direccion: t.direccion || '',
+            telefono: t.telefono || '',
+            celular: t.celular || '',
+            email: t.email || '',
+        }));
+
+        showToast(`✓ Datos de ${t.nombre} ${t.apellido} autocompletados`, 'success');
+    };
+
+    const handleCopyLink = () => {
+        const link = typeof window !== 'undefined' ? `${window.location.origin}/registro` : '/registro';
+        navigator.clipboard.writeText(link);
+        showToast(`Link copiado: ${link}`, 'success');
     };
 
     // Subir imagen a Supabase Storage bucket 'exenciones'
@@ -253,12 +300,40 @@ export default function ExencionPage() {
                 showToast(`✓ Exención de ${payload.nombre} ${payload.apellido} guardada en base de datos`, 'success');
             }
 
+            // Sincronizar automáticamente en el padrón de tiradores
+            if (payload.nombre && payload.apellido) {
+                try {
+                    const tiradorPayload = {
+                        nombre: payload.nombre,
+                        apellido: payload.apellido,
+                        nro_socio: payload.nro_socio,
+                        profesion: payload.profesion,
+                        ci: payload.ci,
+                        fecha_nacimiento: payload.fecha_nacimiento,
+                        direccion: payload.direccion,
+                        telefono: payload.telefono,
+                        celular: payload.celular,
+                        email: payload.email,
+                        updated_at: new Date().toISOString(),
+                    };
+
+                    if (payload.ci) {
+                        const { data: existTirador } = await supabase.from('tiradores').select('id').eq('ci', payload.ci).maybeSingle();
+                        if (existTirador) {
+                            await supabase.from('tiradores').update(tiradorPayload).eq('id', existTirador.id);
+                        } else {
+                            await supabase.from('tiradores').insert([tiradorPayload]);
+                        }
+                    }
+                    await loadTiradores();
+                } catch (e) {
+                    console.warn('Sync tirador ignorado:', e);
+                }
+            }
+
             // Actualizar state y limpiar selectedId para que el próximo tirador sea un nuevo registro
             setFormData(prev => ({ ...prev, fotoUrl: finalFotoUrl }));
             setSelectedFile(null);
-            if (!andPrint) {
-                // Si fue solo guardar y no estaba en modo edición explícito, dejamos listo para nuevo
-            }
             await loadExenciones();
 
             if (andPrint) {
@@ -635,6 +710,66 @@ export default function ExencionPage() {
                                         </button>
                                     </div>
                                 )}
+
+                                {/* SECCIÓN AUTOCOMPLETAR CON TIRADOR REGISTRADO & LINK PÚBLICO */}
+                                <div style={{
+                                    backgroundColor: '#f0fdf4',
+                                    border: '1px solid #86efac',
+                                    borderRadius: '0.65rem',
+                                    padding: '1rem',
+                                    marginBottom: '1.25rem'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        <label style={{ fontSize: '0.88rem', fontWeight: 800, color: '#166534', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                            ⚡ Autocompletar con Tirador Registrado ({tiradores.length})
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={handleCopyLink}
+                                            style={{
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #16a34a',
+                                                color: '#15803d',
+                                                padding: '0.3rem 0.65rem',
+                                                borderRadius: '0.375rem',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.35rem'
+                                            }}
+                                        >
+                                            📋 Copiar Link de Registro para WhatsApp
+                                        </button>
+                                    </div>
+
+                                    <p style={{ fontSize: '0.78rem', color: '#14532d', margin: '0 0 0.6rem 0' }}>
+                                        Selecciona un tirador del padrón para rellenar todos sus datos automáticamente en un solo clic:
+                                    </p>
+
+                                    <select
+                                        value={selectedTiradorDropdown}
+                                        onChange={(e) => handleSelectTiradorFromDropdown(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.55rem 0.75rem',
+                                            borderRadius: '0.375rem',
+                                            border: '1.5px solid #22c55e',
+                                            fontSize: '0.9rem',
+                                            backgroundColor: '#ffffff',
+                                            color: '#0f172a',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        <option value="">-- Selecciona un tirador registrado (o escribe abajo para nuevo) --</option>
+                                        {tiradores.map(t => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.nombre} {t.apellido} {t.ci ? `| C.I. ${t.ci}` : ''} {t.nro_socio ? `| Socio #${t.nro_socio}` : ''} {t.celular ? `(${t.celular})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
                                 <form onSubmit={(e) => { e.preventDefault(); handleSave(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                                     

@@ -105,3 +105,20 @@ export type Exencion = {
     eventos?: Evento;
 };
 
+export type Tirador = {
+    id: string;
+    nombre: string;
+    apellido: string;
+    nro_socio?: string | null;
+    profesion?: string | null;
+    ci?: string | null;
+    fecha_nacimiento?: string | null;
+    direccion?: string | null;
+    telefono?: string | null;
+    celular?: string | null;
+    email?: string | null;
+    created_at?: string;
+    updated_at?: string;
+};
+
+
