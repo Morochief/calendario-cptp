@@ -205,6 +205,10 @@ export default function AdminPage() {
                                     <UsersIcon />
                                     Inscripciones
                                 </Link>
+                                <Link href="/admin/exencion" className="btn btn-outline" aria-label="Formulario de Exención">
+                                    <FileTextIcon />
+                                    Exención
+                                </Link>
                             </div>
                         </div>
                         <div className="toolbar-divider" style={{ background: 'var(--border-subtle)' }} />
