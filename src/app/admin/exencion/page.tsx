@@ -179,10 +179,26 @@ export default function ExencionPage() {
     };
 
     const handleDirectPrint = (item: Exencion) => {
-        handleSelectExencion(item);
+        setSelectedId(item.id);
+        setFormData({
+            nombre: item.nombre || '',
+            apellido: item.apellido || '',
+            nroSocio: item.nro_socio || '',
+            profesion: item.profesion || '',
+            ci: item.ci || '',
+            fechaNacimiento: item.fecha_nacimiento || '',
+            direccion: item.direccion || '',
+            telefono: item.telefono || '',
+            celular: item.celular || '',
+            email: item.email || '',
+            ciudad: item.ciudad || 'Asunción',
+            dia: item.dia || '',
+            mes: item.mes || '',
+            anho: item.anho || '',
+        });
         setTimeout(() => {
             window.print();
-        }, 400);
+        }, 150);
     };
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -876,8 +892,12 @@ export default function ExencionPage() {
                             -webkit-print-color-adjust: exact !important;
                             print-color-adjust: exact !important;
                         }
-                        .print\\:hidden {
+                        .print\\:hidden,
+                        .toast-container,
+                        .toast {
                             display: none !important;
+                            visibility: hidden !important;
+                            opacity: 0 !important;
                         }
                         .exencion-print-document {
                             display: block !important;

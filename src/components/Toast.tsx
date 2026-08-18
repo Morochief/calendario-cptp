@@ -53,7 +53,7 @@ function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: 
     if (toasts.length === 0) return null;
 
     return (
-        <div className="toast-container" role="alert" aria-live="polite">
+        <div className="toast-container print:hidden" role="alert" aria-live="polite">
             {toasts.map(toast => (
                 <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
             ))}
