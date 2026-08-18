@@ -241,7 +241,7 @@ export default function ExencionPage() {
                     .eq('id', selectedId);
 
                 if (error) throw error;
-                showToast('Exención actualizada exitosamente con foto y evento', 'success');
+                showToast(`Registro de ${payload.nombre} ${payload.apellido} actualizado exitosamente`, 'success');
             } else {
                 const { data, error } = await supabase
                     .from('exenciones')
@@ -250,15 +250,15 @@ export default function ExencionPage() {
                     .single();
 
                 if (error) throw error;
-                if (data) {
-                    setSelectedId(data.id);
-                }
-                showToast('Exención guardada en la base de datos', 'success');
+                showToast(`✓ Exención de ${payload.nombre} ${payload.apellido} guardada en base de datos`, 'success');
             }
 
-            // Actualizar state
+            // Actualizar state y limpiar selectedId para que el próximo tirador sea un nuevo registro
             setFormData(prev => ({ ...prev, fotoUrl: finalFotoUrl }));
             setSelectedFile(null);
+            if (!andPrint) {
+                // Si fue solo guardar y no estaba en modo edición explícito, dejamos listo para nuevo
+            }
             await loadExenciones();
 
             if (andPrint) {
@@ -594,7 +594,7 @@ export default function ExencionPage() {
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                                     <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                                        Carga de Exención
+                                        {selectedId ? '✏️ Editando Exención' : '✨ Nueva Exención'}
                                     </h2>
                                     {adminUser && (
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -602,6 +602,39 @@ export default function ExencionPage() {
                                         </span>
                                     )}
                                 </div>
+
+                                {selectedId && (
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        backgroundColor: '#eff6ff',
+                                        border: '1px solid #bfdbfe',
+                                        borderRadius: '0.375rem',
+                                        padding: '0.5rem 0.75rem',
+                                        marginBottom: '1rem',
+                                        fontSize: '0.82rem',
+                                        color: '#1e40af'
+                                    }}>
+                                        <span>Estás modificando un registro existente en la base de datos.</span>
+                                        <button
+                                            type="button"
+                                            onClick={handleReset}
+                                            style={{
+                                                background: '#ffffff',
+                                                border: '1px solid #93c5fd',
+                                                color: '#1d4ed8',
+                                                padding: '0.2rem 0.5rem',
+                                                borderRadius: '0.25rem',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            + Crear Nuevo en vez de Editar
+                                        </button>
+                                    </div>
+                                )}
 
                                 <form onSubmit={(e) => { e.preventDefault(); handleSave(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                                     
