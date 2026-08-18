@@ -81,3 +81,24 @@ export const TIPOS_EVENTO_INICIALES = [
     { nombre: 'Tirada Social', color: '#059669' },
     { nombre: 'Otro', color: '#6B7280' },
 ];
+
+export type Exencion = {
+    id: string;
+    nombre: string;
+    apellido: string;
+    nro_socio?: string | null;
+    profesion?: string | null;
+    ci?: string | null;
+    fecha_nacimiento?: string | null;
+    direccion?: string | null;
+    telefono?: string | null;
+    celular?: string | null;
+    email?: string | null;
+    ciudad?: string | null;
+    dia?: string | null;
+    mes?: string | null;
+    anho?: string | null;
+    admin_user?: string | null;
+    created_at: string;
+};
+
