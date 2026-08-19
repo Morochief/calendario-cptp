@@ -390,8 +390,8 @@ export default function TiradoresAdminPage() {
                                             <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
                                                 <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                                                     <Link
-                                                        href={`/admin/exencion`}
-                                                        title="Hacer Exención de Responsabilidad"
+                                                        href={`/admin/exencion?tiradorId=${item.id}`}
+                                                        title="Hacer Exención de Responsabilidad con estos datos"
                                                         style={{
                                                             background: '#eff6ff',
                                                             color: '#1d4ed8',
@@ -405,7 +405,7 @@ export default function TiradoresAdminPage() {
                                                             alignItems: 'center'
                                                         }}
                                                     >
-                                                        Exención
+                                                        Hacer Exención
                                                     </Link>
 
                                                     <button

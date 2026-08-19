@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Breadcrumbs from '@/components/Breadcrumbs';
@@ -9,8 +9,11 @@ import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabase';
 import { Exencion, Evento } from '@/lib/types';
 
-export default function ExencionPage() {
+function ExencionContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const tiradorIdFromUrl = searchParams.get('tiradorId');
+
     const { showToast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const quickUploadInputRef = useRef<HTMLInputElement>(null);
@@ -94,6 +97,13 @@ export default function ExencionPage() {
             setTiradores(data);
         }
     }
+
+    // Auto-completar tirador si viene por parámetro en la URL (?tiradorId=...)
+    useEffect(() => {
+        if (tiradorIdFromUrl && tiradores.length > 0) {
+            handleSelectTiradorFromDropdown(tiradorIdFromUrl);
+        }
+    }, [tiradorIdFromUrl, tiradores]);
 
     async function loadEventos() {
         const supabase = createClient();
@@ -180,6 +190,7 @@ export default function ExencionPage() {
         const t = tiradores.find(x => x.id === tiradorId);
         if (!t) return;
 
+        setSelectedId(null);
         setFormData(prev => ({
             ...prev,
             nombre: t.nombre || '',
@@ -219,7 +230,6 @@ export default function ExencionPage() {
 
         if (uploadError) {
             console.error('Error al subir a storage exenciones:', uploadError);
-            // Intentar con bucket 'event-images' si 'exenciones' no estuviera creado aún
             const { error: fallbackError } = await supabase.storage
                 .from('event-images')
                 .upload(filePath, file);
@@ -1826,5 +1836,17 @@ export default function ExencionPage() {
                 </div>
             </div>
         </>
+    );
+}
+
+export default function ExencionPage() {
+    return (
+        <Suspense fallback={
+            <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+                Cargando módulo de exención...
+            </div>
+        }>
+            <ExencionContent />
+        </Suspense>
     );
 }
