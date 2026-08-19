@@ -205,6 +205,10 @@ export default function AdminPage() {
                                     <UsersIcon />
                                     Inscripciones
                                 </Link>
+                                <Link href="/admin/tiradores" className="btn btn-outline" aria-label="Padrón de Tiradores">
+                                    <UsersIcon />
+                                    Tiradores
+                                </Link>
                                 <Link href="/admin/exencion" className="btn btn-outline" aria-label="Formulario de Exención">
                                     <FileTextIcon />
                                     Exención

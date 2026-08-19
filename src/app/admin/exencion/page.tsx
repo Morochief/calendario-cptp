@@ -723,25 +723,45 @@ export default function ExencionPage() {
                                         <label style={{ fontSize: '0.88rem', fontWeight: 800, color: '#166534', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                             ⚡ Autocompletar con Tirador Registrado ({tiradores.length})
                                         </label>
-                                        <button
-                                            type="button"
-                                            onClick={handleCopyLink}
-                                            style={{
-                                                backgroundColor: '#ffffff',
-                                                border: '1px solid #16a34a',
-                                                color: '#15803d',
-                                                padding: '0.3rem 0.65rem',
-                                                borderRadius: '0.375rem',
-                                                fontSize: '0.78rem',
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.35rem'
-                                            }}
-                                        >
-                                            📋 Copiar Link de Registro para WhatsApp
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                            <Link
+                                                href="/admin/tiradores"
+                                                style={{
+                                                    backgroundColor: '#ffffff',
+                                                    border: '1px solid #16a34a',
+                                                    color: '#15803d',
+                                                    padding: '0.3rem 0.65rem',
+                                                    borderRadius: '0.375rem',
+                                                    fontSize: '0.78rem',
+                                                    fontWeight: 700,
+                                                    textDecoration: 'none',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.35rem'
+                                                }}
+                                            >
+                                                ⚙️ Gestionar Padrón
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                onClick={handleCopyLink}
+                                                style={{
+                                                    backgroundColor: '#ffffff',
+                                                    border: '1px solid #16a34a',
+                                                    color: '#15803d',
+                                                    padding: '0.3rem 0.65rem',
+                                                    borderRadius: '0.375rem',
+                                                    fontSize: '0.78rem',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.35rem'
+                                                }}
+                                            >
+                                                📋 Copiar Link WhatsApp
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <p style={{ fontSize: '0.78rem', color: '#14532d', margin: '0 0 0.6rem 0' }}>
